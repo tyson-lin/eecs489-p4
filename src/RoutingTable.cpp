@@ -38,8 +38,42 @@ RoutingTable::RoutingTable(const std::filesystem::path& routingTablePath) {
     }
 }
 
+// Function to calculate the CIDR length of a netmask
+//
+// Assumptions:
+// All netmasks are valid netmasks
+//      255.255.0.1 will not appear
+static unsigned int netmaskToCIDR(uint32_t netmask) {
+    unsigned int cidrLength = 0;
+    // Count the number of 1 bits in the netmask
+    while (netmask) {
+        cidrLength += (netmask & 1); // Check the least significant bit
+        netmask >>= 1;               // Shift right by 1 bit
+    }
+    return cidrLength;
+}
+
+
 std::optional<RoutingEntry> RoutingTable::getRoutingEntry(ip_addr ip) {
     // TODO: Your code below
+    unsigned int longest_match_index = -1;
+    unsigned int longest_match_length = 0;
+
+    for (unsigned int i = 0; i < routingEntries.size(); i++) {
+        uint32_t mask = routingEntries[i].mask;
+        uint32_t masked_gateway = routingEntries[i].gateway & mask;
+        uint32_t masked_input = ip & mask;
+        if (masked_gateway == masked_input) {
+            unsigned int match_length = netmaskToCIDR(mask);
+            if (match_length > longest_match_length) {
+                longest_match_index = i;
+                longest_match_length = match_length;
+            }
+        }
+    }
+    if (longest_match_index != -1) {
+        return routingEntries[longest_match_index];
+    }
 
     return routingEntries[0]; // Placeholder
 }
