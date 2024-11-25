@@ -49,9 +49,9 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
     ArpEntry new_entry;
     new_entry.ip = ip;
     new_entry.mac = mac;
-    new_entry.time_added = 0;
-    std::pair<std::string,double> new_entry(ip, mac);
-    entries.insert()
+    new_entry.timeAdded = 0;
+    std::pair<std::string,ArpEntry> entry(ip, new_entry);
+    entries.insert(entry)
 }
 
 std::optional<mac_addr> ArpCache::getEntry(uint32_t ip) {
