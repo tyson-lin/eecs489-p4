@@ -50,7 +50,7 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
     new_entry.ip = ip;
     new_entry.mac = mac;
     new_entry.timeAdded = std::chrono::steady_clock::now();
-    std::pair<std::string,ArpEntry> entry(ip, new_entry);
+    std::pair<ip_addr,ArpEntry> entry(ip, new_entry);
     entries.insert(entry)
 }
 
