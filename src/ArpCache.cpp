@@ -46,13 +46,22 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
     std::unique_lock lock(mutex);
 
     // TODO: Your code below
-
+    ArpEntry new_entry;
+    new_entry.ip = ip;
+    new_entry.mac = mac;
+    new_entry.time_added = 0;
+    std::pair<std::string,double> new_entry(ip, mac);
+    entries.insert()
 }
 
 std::optional<mac_addr> ArpCache::getEntry(uint32_t ip) {
     std::unique_lock lock(mutex);
 
     // TODO: Your code below
+    if (entries.find(ip) != entries.end()) {
+        ArpEntry desired_entry = entries.at(ip);
+        return desried_entry.mac;
+    }
 
     return std::nullopt; // Placeholder
 }
@@ -61,5 +70,24 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
     std::unique_lock lock(mutex);
 
     // TODO: Your code below
+    AwaitingPacket queue_me;
+    queue_me.packet = packet;
+    queue_me.iface = iface;
 
+    // ArpRequest doesn't exist yet
+    if (requests.find(ip) != requests.end()) {
+        list<AwaitingPacket> packets;
+        packets.push_back(queue_me);
+
+        ArpRequest request;
+        request.ip = ip;
+        request.awaitingPackets = mylist;
+
+        std:pair<ip_addr,ArpRequest> new_request(ip, request);
+        requests.insert(new_request);
+    }
+    // ArpRequest already exists
+    else {
+        requests[ip].awaitingPackets.push_back(queue_me);
+    }
 }
