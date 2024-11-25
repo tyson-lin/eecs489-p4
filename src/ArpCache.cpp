@@ -51,7 +51,7 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
     new_entry.mac = mac;
     new_entry.timeAdded = std::chrono::steady_clock::now();
     std::pair<ip_addr,ArpEntry> entry(ip, new_entry);
-    entries.insert(entry)
+    entries.insert(entry);
 }
 
 std::optional<mac_addr> ArpCache::getEntry(uint32_t ip) {
@@ -83,7 +83,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
         request.ip = ip;
         request.awaitingPackets = packets;
 
-        std:pair<ip_addr,ArpRequest> new_request(ip, request);
+        std::pair<ip_addr,ArpRequest> new_request(ip, request);
         requests.insert(new_request);
     }
     // ArpRequest already exists
