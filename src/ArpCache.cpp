@@ -60,7 +60,7 @@ std::optional<mac_addr> ArpCache::getEntry(uint32_t ip) {
     // TODO: Your code below
     if (entries.find(ip) != entries.end()) {
         ArpEntry desired_entry = entries.at(ip);
-        return desried_entry.mac;
+        return desired_entry.mac;
     }
 
     return std::nullopt; // Placeholder
@@ -76,12 +76,12 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
 
     // ArpRequest doesn't exist yet
     if (requests.find(ip) != requests.end()) {
-        list<AwaitingPacket> packets;
+        std::list<AwaitingPacket> packets;
         packets.push_back(queue_me);
 
         ArpRequest request;
         request.ip = ip;
-        request.awaitingPackets = mylist;
+        request.awaitingPackets = packets;
 
         std:pair<ip_addr,ArpRequest> new_request(ip, request);
         requests.insert(new_request);
