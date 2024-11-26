@@ -114,7 +114,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
 
         // If there is no pending ARP request already, it is probably 
         // a good idea to send one out immediately. ED #827
-        packetSender.sendPacket(packet, iface);
+        //packetSender.sendPacket(packet, iface);
     }
     // ArpRequest already exists
     else {
