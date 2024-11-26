@@ -25,9 +25,5 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     }
 
     // TODO: Your code below
-    uint8_t buf[packet.size()];
-    for (unsigned int i = 0; i < packet.size(); i++) {
-        buf[i] = packet[i];
-    }
-    print_hdrs(buf, packet.size());
+    print_hdrs(packet.data(), packet.size());
 }

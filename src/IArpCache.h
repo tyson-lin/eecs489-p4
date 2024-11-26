@@ -22,7 +22,7 @@ struct AwaitingPacket {
   three of these approaches. */
 
   /**
-   * Let's assume that @iface is the interface on which the packet came in on
+   * Let's assume that @iface is the interface on where the packet is going
    *    -Tyson
    */
 };
