@@ -83,9 +83,6 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
 }
 
 void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string iface) {
-    std::cout << "Request packet: " << std::endl;
-    print_hdrs(packet.data(), packet.size());
-
     RoutingInterface arrival_interface = routingTable->getRoutingInterface(iface);
     mac_addr arrival_mac_addr = arrival_interface.mac;
 
@@ -120,9 +117,6 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
     // Generate ARP response
     std::memcpy(packet.data(), ehdr, sizeof(sr_ethernet_hdr_t));
     std::memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), arp_hdr, sizeof(sr_arp_hdr_t));
-
-    std::cout << "Response packet: " << std::endl;
-    print_hdrs(packet.data(), packet.size());
 
     // Send response
     packetSender->sendPacket(packet, iface);
