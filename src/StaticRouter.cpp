@@ -6,6 +6,8 @@
 #include "protocol.h"
 #include "utils.h"
 
+#include <iostream>
+
 StaticRouter::StaticRouter(std::unique_ptr<IArpCache> arpCache, std::shared_ptr<IRoutingTable> routingTable,
                            std::shared_ptr<IPacketSender> packetSender)
     : routingTable(routingTable)
@@ -25,5 +27,8 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     }
 
     // TODO: Your code below
-    print_hdrs(packet.data(), packet.size());
+
+    // Must first decide between ARP or IP packet
+    sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)buf;
+    std::cout << ehdr->ether_type << std:: endl;
 }
