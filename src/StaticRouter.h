@@ -32,7 +32,7 @@ private:
     void handleIP_Packet(std::vector<uint8_t> packet, std::string iface);
     void handleARP_Packet(std::vector<uint8_t> packet, std::string iface);
 
-    void sendARP_Respose(std::vector<uint8_t> packet, std::string iface);
+    void sendARP_Response(std::vector<uint8_t> packet, std::string iface);
 };
 
 
