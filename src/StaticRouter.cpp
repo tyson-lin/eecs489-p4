@@ -104,9 +104,9 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
     sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
     for (int i = 0; i < ETHER_ADDR_LEN; i++) {
         // target hardware address set to the sender hardware address
-        arp_hdr->tha[i] = arp_hdr->ar_sha[i];
+        arp_hdr->ar_tha[i] = arp_hdr->ar_sha[i];
         // sender hardware address set to the mac addr of the arrival interface
-        arp_hdr->sha[i] = arrival_mac_addr[i];
+        arp_hdr->ar_sha[i] = arrival_mac_addr[i];
     }
     // swap sender and target IP addresses    
     uint32_t temp_ip;
