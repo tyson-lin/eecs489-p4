@@ -115,7 +115,7 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
     std::memcpy(&arp_hdr->ar_tip, &temp_ip, sizeof(temp_ip)); // Replace target IP with original sender IP
     // formats and lengths shouldn't change
 
-    arp_hdr->ar_op = arp_op_reply;
+    arp_hdr->ar_op = htons(arp_op_reply);
 
     // Generate ARP response
     std::memcpy(packet.data(), ehdr, sizeof(sr_ethernet_hdr_t));
