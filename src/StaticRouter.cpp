@@ -100,9 +100,13 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
         // sender and target hardware addresses get switched
         std::swap(arp_hdr->ar_sha[i], arp_hdr->ar_tha[i]);
     }
-    std::swap(arp_hdr->ar_sip, arp_hdr->ar_tip); // swap sender and target IP addresses
+    // swap sender and target IP addresses    
+    uint32_t temp_ip;
+    std::memcpy(&temp_ip, &arp_hdr->ar_sip, sizeof(temp_ip)); // Copy sender IP into temp
+    std::memcpy(&arp_hdr->ar_sip, &arp_hdr->ar_tip, sizeof(temp_ip)); // Replace sender IP with target IP
+    std::memcpy(&arp_hdr->ar_tip, &temp_ip, sizeof(temp_ip)); // Replace target IP with original sender IP
     // formats and lengths shouldn't change
-
+    
     arp_hdr->ar_op = arp_op_reply;
 
     // Generate ARP response
