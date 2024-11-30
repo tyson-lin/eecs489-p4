@@ -41,7 +41,7 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
             break;
         case ethertype_ip:
             std::cout << "Processing IP packet" << std::endl;
-            handleIP_Packet(packet, iface);s
+            handleIP_Packet(packet, iface);
             break;
         default:
             std::cout << "Unrecognized packet type" << std::endl;
@@ -60,7 +60,7 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
     print_addr_ip_int(target_ip_addr);
 
     // Check if Target IP address isn't my IP address
-    RoutingInterface arrival_interface = getRoutingInterface(iface);
+    RoutingInterface arrival_interface = routingTable.getRoutingInterface(iface);
     ip_addr my_ip = arrival_interface.ip;
     if (target_ip_addr != my_ip) {
         return; // drop the packet
