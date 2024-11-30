@@ -29,6 +29,6 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     // TODO: Your code below
 
     // Must first decide between ARP or IP packet
-    sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)buf.data();
+    sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
     std::cout << ehdr->ether_type << std:: endl;
 }
