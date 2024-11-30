@@ -69,8 +69,50 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
     }
 
     // Request or response?
+    sr_arp_opcode opcode = ntohs(arp_hdr->ar_op);
+    switch (opcode) {
+        case arp_op_request:
+            sendARP_Response(packet, iface);
+            break;
+        case arp_op_reply:
+            break;
+        default:
+            break;
+    }
+    return;
+}
+
+void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string iface) {
+    cout << "Request packet: " << endl;
     print_hdrs(packet.data(), packet.size());
 
-    return;
+    // First generate the ethernet header
+    sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
+    for (int i = 0; i < ETHER_ADDR_LEN; i++) { 
+        // source and destination get switched (opposite direction)
+        swap(ehdr->ether_dhost[i], ehdr->ether_shost[i]);
+    }
+    // packet type shouldn't change
+
+    // Generate the arp header
+    sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
+    for (int i = 0; i < ETHER_ADDR_LEN; i++) {
+        // sender and target hardware addresses get switched
+        swap(arp_hdr->ar_sha[i], arp_hdr->ar_tha[i]);
+    }
+    swap(ar_sip, ar_tip); // swap sender and target IP addresses
+    // formats and lengths shouldn't change
+
+    arp_hdr->ar_op = arp_op_reply;
+
+    // Generate ARP response
+    std::memcpy(packet.data(), ehdr, sizeof(sr_ethernet_hdr_t));
+    std::memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), arp_hdr, sizeof(sr_arp_hdr_t));
+
+    cout << "Response packet: " << endl;
+    print_hdrs(packet.data(), packet.size());
+
+    // Send response
+    packetSender->sendPacket(packet, iface);
 }
 
