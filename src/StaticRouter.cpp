@@ -90,7 +90,7 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
     sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
     for (int i = 0; i < ETHER_ADDR_LEN; i++) { 
         // source and destination get switched (opposite direction)
-        swap(ehdr->ether_dhost[i], ehdr->ether_shost[i]);
+        std::swap(ehdr->ether_dhost[i], ehdr->ether_shost[i]);
     }
     // packet type shouldn't change
 
@@ -98,9 +98,9 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
     sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
     for (int i = 0; i < ETHER_ADDR_LEN; i++) {
         // sender and target hardware addresses get switched
-        swap(arp_hdr->ar_sha[i], arp_hdr->ar_tha[i]);
+        std::swap(arp_hdr->ar_sha[i], arp_hdr->ar_tha[i]);
     }
-    swap(arp_hdr->ar_sip, arp_hdr->ar_tip); // swap sender and target IP addresses
+    std::swap(arp_hdr->ar_sip, arp_hdr->ar_tip); // swap sender and target IP addresses
     // formats and lengths shouldn't change
 
     arp_hdr->ar_op = arp_op_reply;
