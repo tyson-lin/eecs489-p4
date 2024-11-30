@@ -28,6 +28,9 @@ private:
     std::shared_ptr<IPacketSender> packetSender;
 
     std::unique_ptr<IArpCache> arpCache;
+
+    void handleIP_Packet(std::vector<uint8_t> packet, std::string iface);
+    void handleARP_Packet(std::vector<uint8_t> packet, std::string iface);
 };
 
 

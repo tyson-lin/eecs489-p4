@@ -16,6 +16,8 @@ StaticRouter::StaticRouter(std::unique_ptr<IArpCache> arpCache, std::shared_ptr<
 {
 }
 
+
+
 void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
 {
     std::unique_lock lock(mutex);
@@ -35,11 +37,38 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     switch (ethtype) {
         case ethertype_arp:
             std::cout << "Processing ARP packet" << std::endl;
+            handleARP_Packet(packet, iface);
             break;
         case ethertype_ip:
             std::cout << "Processing IP packet" << std::endl;
+            handleIP_Packet(packet, iface);s
             break;
         default:
             std::cout << "Unrecognized packet type" << std::endl;
     } 
 }
+
+void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string iface) {
+    return;
+}
+
+void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string iface) {
+    sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
+
+    uint32_t target_ip_addr = ntohl(arp_hdr->ar_tip);
+    std::cout << "Target IP Address: ";
+    print_addr_ip_int(target_ip_addr);
+
+    // Check if Target IP address isn't my IP address
+    RoutingInterface arrival_interface = getRoutingInterface(iface);
+    ip_addr my_ip = arrival_interface.ip;
+    if (target_ip_addr != my_ip) {
+        return; // drop the packet
+    }
+
+    // Request or response?
+    
+
+    return;
+}
+
