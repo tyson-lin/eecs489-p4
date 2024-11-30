@@ -67,7 +67,7 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
     }
 
     // Request or response?
-    print_hdrs(packet.data());
+    print_hdrs(packet.data(), packet.size());
 
     return;
 }
