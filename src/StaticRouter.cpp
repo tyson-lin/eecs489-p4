@@ -61,7 +61,7 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
 
     // Check if Target IP address isn't my IP address
     RoutingInterface arrival_interface = routingTable->getRoutingInterface(iface);
-    ip_addr my_ip = arrival_interface.ip;
+    ip_addr my_ip = ntohl(arrival_interface.ip);
     std::cout << "Arrival IP Address: ";
     print_addr_ip_int(my_ip);
     if (target_ip_addr != my_ip) {
