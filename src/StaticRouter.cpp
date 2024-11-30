@@ -69,7 +69,7 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
     }
 
     // Request or response?
-    sr_arp_opcode opcode = ntohs(arp_hdr->ar_op);
+    sr_arp_opcode opcode = (sr_arp_opcode)ntohs(arp_hdr->ar_op);
     switch (opcode) {
         case arp_op_request:
             sendARP_Response(packet, iface);
@@ -83,7 +83,7 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
 }
 
 void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string iface) {
-    cout << "Request packet: " << endl;
+    std::cout << "Request packet: " << std::endl;
     print_hdrs(packet.data(), packet.size());
 
     // First generate the ethernet header
@@ -109,7 +109,7 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
     std::memcpy(packet.data(), ehdr, sizeof(sr_ethernet_hdr_t));
     std::memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), arp_hdr, sizeof(sr_arp_hdr_t));
 
-    cout << "Response packet: " << endl;
+    std::cout << "Response packet: " << std::endl;
     print_hdrs(packet.data(), packet.size());
 
     // Send response
