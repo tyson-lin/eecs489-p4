@@ -158,6 +158,6 @@ void StaticRouter::handleARP_Response(std::vector<uint8_t> packet, std::string i
     for (auto & packet : arpCache->requests[sender_ip_addr].awaitingPackets) {
         packetSender->sendPacket(packet.packet, packet.iface);
     }
-    arpCache->arpCacherequests[sender_ip_addr].awaitingPackets.clear();
+    arpCache->requests[sender_ip_addr].awaitingPackets.clear();
 }
 
