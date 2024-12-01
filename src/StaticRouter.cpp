@@ -135,9 +135,10 @@ void StaticRouter::handleARP_Response(std::vector<uint8_t> packet, std::string i
     ip_addr arrival_ip = arrival_iface.ip;
 
     // Have I issued this response?
-    if (arpCache->requests.find(arrival_ip) == arpCache->requests.end()) {
-        return; // if not, drop the packet
-    } 
+    std::optional<mac_addr> entry_mac_addr = getEntry(arrival_ip);
+    if (entry_mac_addr) {
+        return; // Entry already exists in ARP cache
+    }
 
     // Cache ARP
     sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
