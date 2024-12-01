@@ -248,7 +248,7 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
             icmp_hdr->icmp_sum = 0;
 
             // Generate checksum
-            icmp_hdr->icmp_sum = cksum(packet.data(), packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
+            icmp_hdr->icmp_sum = cksum(icmp_hdr, packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
             memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_hdr, sizeof(sr_icmp_hdr_t));
             break;
     }
