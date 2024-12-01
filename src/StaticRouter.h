@@ -34,6 +34,11 @@ private:
 
     void sendARP_Response(std::vector<uint8_t> packet, std::string iface);
     void handleARP_Response(std::vector<uint8_t> packet, std::string iface);
+
+    void handleIP_PacketToMyInterfaces(std::vector<uint8_t> packet, std::string iface);
+
+    void sendICMP_Packet(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code);
+    void handleUDPTCP_Packet(std::vector<uint8_t> packet, std::string iface);
 };
 
 

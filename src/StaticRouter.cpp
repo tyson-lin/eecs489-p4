@@ -54,6 +54,27 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     std::cout << "IP Packet: " << std::endl;
     print_hdrs(packet.data(), packet.size());
 
+    // Is the destination IP one of my interfaces?
+    uint32_t ip_dst = ntohl(iphdr->ip_dst);
+
+    std::unordered_map<std::string, RoutingInterface> interfaces = routingTable->getRoutingInterfaces();
+    
+    bool exists = false;
+    for (const auto& [key, interface] : interfaces) {
+        std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(interface.ip);
+        if (entry) {
+            exists = true;
+            break;
+        }
+    }
+
+    if (exists) {
+        // forward
+        handleIP_PacketToMyInterfaces(packet, iface);
+    } else {
+        // do TTL stuff
+    }
+
     return;
 }
 
@@ -80,7 +101,7 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
             sendARP_Response(packet, iface);
             break;
         case arp_op_reply:
-
+            handleARP_Response(packet, iface);
             break;
         default:
             break;
@@ -150,3 +171,64 @@ void StaticRouter::handleARP_Response(std::vector<uint8_t> packet, std::string i
     arpCache->addEntry(sender_ip_addr, sender_mac_addr);
 }
 
+void StaticRouter::handleIP_PacketToMyInterfaces(std::vector<uint8_t> packet, std::string iface) {
+    sr_ip_hdr_t* iphdr = (sr_ip_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
+    
+    switch (iphdr->ip_p) {
+        case ip_protocol_icmp:
+            sendICMP_Packet(packet, iface, 0, 0);
+            return;
+        case ip_protocol_tcp:
+        case ip_protocol_udp:
+            sendICMP_Packet(packet, iface, 3, 3);
+            return;
+        default:
+            return;
+    }
+}
+
+void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code) {
+    RoutingInterface arrival_interface = routingTable->getRoutingInterface(iface);
+    mac_addr arrival_mac_addr = arrival_interface.mac;
+
+    // First generate the ethernet header
+    sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
+    for (int i = 0; i < ETHER_ADDR_LEN; i++) { 
+        // set the destination to the source of the request packet
+        ehdr->ether_dhost[i] = ehdr->ether_shost[i];
+        // set the source to be the mac addr of the arrival interface
+        ehdr->ether_shost[i] = arrival_mac_addr[i];
+    }
+    std::memcpy(packet.data(), ehdr, sizeof(sr_ethernet_hdr_t));
+
+    // packet type shouldn't change
+
+    // Generate the IP header
+    sr_ip_hdr_t* iphdr = (sr_ip_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
+    // theoretically all we need to do is swap source and destination
+    uint32_t temp_ip;
+    std::memcpy(&temp_ip, &iphdr->ip_src, sizeof(temp_ip)); // Copy sender IP into temp
+    std::memcpy(&iphdr->ip_src, &iphdr->ip_dst, sizeof(temp_ip)); // Replace sender IP with target IP
+    std::memcpy(&iphdr->ip_dst, &temp_ip, sizeof(temp_ip)); // Replace target IP with original sender IP
+
+    std::memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), iphdr, sizeof(sr_ip_hdr_t));
+
+    // Generate the ICMP header
+    switch (type) {
+        case 3:
+            sr_icmp_t3_hdr_t* icmp_t3_hdr;
+            break;
+        default:
+            sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+            icmp_hdr->icmp_type = type;
+            icmp_hdr->icmp_code = code;
+            icmp_hdr->icmp_sum = 0;
+
+            // Generate checksum
+            icmp_hdr->icmp_sum = cksum(packet.data(), packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
+            memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_hdr, sizeof(sr_icmp_hdr_t));
+            break;
+    }
+
+    packetSender->sendPacket(packet, iface);
+}
