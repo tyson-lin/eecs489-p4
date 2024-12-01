@@ -80,6 +80,7 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
 
     if (exists) {
         // forward
+        cout << "Handling IP Packet to one of my interfaces" << std::endl;
         handleIP_PacketToMyInterfaces(packet, iface);
     } else {
         // do TTL stuff
