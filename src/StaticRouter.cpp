@@ -253,5 +253,8 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
             break;
     }
 
+    std::cout << "Sending packet: " << std::endl;
+    print_hdrs(packet.data(), packet.size());
+
     packetSender->sendPacket(packet, iface);
 }
