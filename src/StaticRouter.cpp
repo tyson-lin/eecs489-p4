@@ -61,6 +61,8 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     uint16_t received_checksum = iphdr->ip_sum;
     iphdr->ip_sum = 0;
     uint16_t correct_checksum = cksum(iphdr, sizeof(sr_ip_hdr_t));
+    std::cout << "Received checksum: " << received_checksum << std::endl;
+    std::cout << "Correct checksum: " << correct_checksum << std::endl;
     if (received_checksum != correct_checksum) {
         return;
     }
