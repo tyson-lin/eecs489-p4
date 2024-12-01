@@ -71,7 +71,7 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t));
     uint16_t received_icmp_checksum = icmp_hdr->icmp_sum;
     icmp_hdr->icmp_sum = 0;
-    uint16_t correct_icmp_checksum = cksum(icmp_hdr, sizeof(sr_icmp_header_t));
+    uint16_t correct_icmp_checksum = cksum(icmp_hdr, sizeof(sr_icmp_hdr_t));
     std::cout << "Received ICMP checksum: " << received_icmp_checksum << std::endl;
     std::cout << "Correct ICMP checksum: " << correct_icmp_checksum << std::endl;
     if (received_icmp_checksum != correct_icmp_checksum) {
