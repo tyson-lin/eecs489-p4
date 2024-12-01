@@ -57,6 +57,14 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     // Is the destination IP one of my interfaces?
     uint32_t ip_dst = ntohl(iphdr->ip_dst);
 
+    // Is the IP packet checksum invalid?
+    uint16_t received_checksum = iphdr->ip_sum;
+    iphdr->ip_sum = 0;
+    uint16_t correct_checksum = cksum(iphdr, sizeof(sr_ip_hdr_t));
+    if (received_checksum != correct_checksum) {
+        return;
+    }
+
     std::unordered_map<std::string, RoutingInterface> interfaces = routingTable->getRoutingInterfaces();
     
     bool exists = false;
@@ -217,6 +225,7 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
     switch (type) {
         case 3:
             sr_icmp_t3_hdr_t* icmp_t3_hdr;
+
             break;
         default:
             sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
