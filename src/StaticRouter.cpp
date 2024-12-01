@@ -49,6 +49,11 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
 }
 
 void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string iface) {
+    sr_ip_hdr_t* iphdr = (sr_ip_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
+
+    std::cout << "IP Packet: " << std::endl;
+    print_hdrs(packet.data(), packet.size());
+
     return;
 }
 
@@ -75,6 +80,7 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
             sendARP_Response(packet, iface);
             break;
         case arp_op_reply:
+
             break;
         default:
             break;
@@ -110,6 +116,7 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
     std::memcpy(&temp_ip, &arp_hdr->ar_sip, sizeof(temp_ip)); // Copy sender IP into temp
     std::memcpy(&arp_hdr->ar_sip, &arp_hdr->ar_tip, sizeof(temp_ip)); // Replace sender IP with target IP
     std::memcpy(&arp_hdr->ar_tip, &temp_ip, sizeof(temp_ip)); // Replace target IP with original sender IP
+
     // formats and lengths shouldn't change
 
     arp_hdr->ar_op = htons(arp_op_reply);
@@ -120,5 +127,37 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
 
     // Send response
     packetSender->sendPacket(packet, iface);
+}
+
+void StaticRouter::handleARP_Response(std::vector<uint8_t> packet, std::string iface) {
+    // IP address associated with this interface
+    RoutingInterface arrival_iface = routingTable->getRoutingInterface(iface);
+    ip_addr arrival_ip = arrival_iface.ip;
+
+    // Have I issued this response?
+    if (arpCache->requests.find(arrival_ip) == arpCache->requests.end()) {
+        return; // if not, drop the packet
+    } 
+
+    // Cache ARP
+    sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
+    ip_addr sender_ip_addr = ntohl(arp_hdr->ar_sip);
+    
+    mac_addr sender_mac_addr;
+    memcpy(sender_mac_addr.data(), apr_hdr->ar_sha, ETHER_ADDR_LEN);
+
+    arpCache->addEntry(sender_ip_addr, sender_mac_addr);
+
+    // TODO: i assume i need to use the information in the ARP response to update all the awaiting packets?
+
+    // Forward awaiting packets
+    if (requests.find(sender_ip_addr) == requests.end()) {
+        return; // no awaiting packets
+    }
+
+    for (auto & packet : requests[sender_ip_addr].awaitingPackets) {
+        packetSender->sendPacket(packet.packet, packet.iface);
+    }
+    requests[sender_ip_addr].awaitingPackets.clear();
 }
 
