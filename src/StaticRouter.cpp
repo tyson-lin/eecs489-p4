@@ -147,17 +147,5 @@ void StaticRouter::handleARP_Response(std::vector<uint8_t> packet, std::string i
     memcpy(sender_mac_addr.data(), arp_hdr->ar_sha, ETHER_ADDR_LEN);
 
     arpCache->addEntry(sender_ip_addr, sender_mac_addr);
-
-    // TODO: i assume i need to use the information in the ARP response to update all the awaiting packets?
-
-    // Forward awaiting packets
-    if (arpCache->requests.find(sender_ip_addr) == arpCache->requests.end()) {
-        return; // no awaiting packets
-    }
-
-    for (auto & packet : arpCache->requests[sender_ip_addr].awaitingPackets) {
-        packetSender->sendPacket(packet.packet, packet.iface);
-    }
-    arpCache.requests[sender_ip_addr].awaitingPackets.clear();
 }
 

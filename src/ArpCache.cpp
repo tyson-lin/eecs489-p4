@@ -76,6 +76,9 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
     new_entry.timeAdded = std::chrono::steady_clock::now();
     std::pair<ip_addr,ArpEntry> entry(ip, new_entry);
     entries.insert(entry);
+
+    // TODO: i assume i need to use the information in the ARP response to update all the awaiting packets
+    // forward awaiting packets
 }
 
 std::optional<mac_addr> ArpCache::getEntry(uint32_t ip) {
