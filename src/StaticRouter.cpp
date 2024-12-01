@@ -61,9 +61,20 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     uint16_t received_checksum = iphdr->ip_sum;
     iphdr->ip_sum = 0;
     uint16_t correct_checksum = cksum(iphdr, sizeof(sr_ip_hdr_t));
-    std::cout << "Received checksum: " << received_checksum << std::endl;
-    std::cout << "Correct checksum: " << correct_checksum << std::endl;
+    std::cout << "Received IP checksum: " << received_checksum << std::endl;
+    std::cout << "Correct IP checksum: " << correct_checksum << std::endl;
     if (received_checksum != correct_checksum) {
+        return;
+    }
+
+    // Is the ICMP packet checksum invalid?
+    sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t));
+    uint16_t received_icmp_checksum = icmp_hdr->icmp_sum;
+    icmp_hdr->icmp_sum = 0;
+    uint16_T correct_icmp_checksum = cksum(icmp_hdr, sizeof(sr_icmp_header_t));
+    std::cout << "Received ICMP checksum: " << received_icmp_checksum << std::endl;
+    std::cout << "Correct ICMP checksum: " << correct_icmp_checksum << std::endl;
+    if (received_icmp_checksum != correct_icmp_checksum) {
         return;
     }
 
