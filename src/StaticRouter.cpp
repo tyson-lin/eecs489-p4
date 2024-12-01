@@ -233,6 +233,9 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
     std::memcpy(&iphdr->ip_src, &iphdr->ip_dst, sizeof(temp_ip)); // Replace sender IP with target IP
     std::memcpy(&iphdr->ip_dst, &temp_ip, sizeof(temp_ip)); // Replace target IP with original sender IP
 
+    iphdr->ip_sum = 0;
+    iphdr->ip_sum = cksum(iphdr, sizeof(sr_ip_hdr_t));
+
     std::memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), iphdr, sizeof(sr_ip_hdr_t));
 
     // Generate the ICMP header
