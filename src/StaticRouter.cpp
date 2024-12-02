@@ -306,7 +306,7 @@ void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterfac
     // let's prepare our new packet - we know everything but the destination mac addr
 
     // Generate ethernet header
-    memcpy(eth_hdr->ether_shost, interface.mac, ETHER_ADDR_LEN);
+    memcpy(eth_hdr->ether_shost, interface.mac.data(), ETHER_ADDR_LEN);
     memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
 
     // Generate IP header
@@ -320,7 +320,7 @@ void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterfac
 
     if (mac) {
         // Forward packet
-        memcpy(eth_hdr->ether_dhost, (mac_addr*)mac, ETHER_ADDR_LEN);
+        memcpy(eth_hdr->ether_dhost, mac->data(), ETHER_ADDR_LEN);
         memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
         packetSender->sendPacket(packet, next_hop.iface);
     } else {
