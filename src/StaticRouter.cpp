@@ -258,7 +258,7 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
     // Generate the ICMP header
     switch (type) {
         // TODO: Type 11
-        case 3:
+        case 3: {
             sr_icmp_t3_hdr_t* icmp_t3_hdr = (sr_icmp_t3_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
             icmp_t3_hdr->icmp_type = type;
             icmp_t3_hdr->icmp_code = code;
@@ -272,7 +272,8 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
             memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_t3_hdr, sizeof(sr_icmp_t3_hdr_t));
 
             break;
-        default:
+        }
+        default: {
             sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
             icmp_hdr->icmp_type = type;
             icmp_hdr->icmp_code = code;
@@ -282,6 +283,7 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
             icmp_hdr->icmp_sum = cksum(icmp_hdr, packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
             memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_hdr, sizeof(sr_icmp_hdr_t));
             break;
+        }
     }
 
     packetSender->sendPacket(packet, iface);
