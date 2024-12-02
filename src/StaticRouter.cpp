@@ -31,7 +31,7 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     // TODO: Your code below
     
     // Test routing table
-    RoutingEntry entry = routingTable->getRoutingEntry(3232235557) // 192.168.0.37
+    RoutingEntry entry = routingTable->getRoutingEntry(3232235557); // 192.168.0.37
     std::cout << "Result: " << entry.gateway << std::endl;
     std::cout << "Correct: " << "10.0.1.100" << std::endl;
 
@@ -71,7 +71,7 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     }
 
     // Is the ICMP packet checksum invalid?
-    sr_icr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t));
+    sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t));
     uint16_t received_icmp_checksum = icmp_hdr->icmp_sum;
     icmp_hdr->icmp_sum = 0;
     uint16_t correct_icmp_checksum = cksum(icmp_hdr, packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
