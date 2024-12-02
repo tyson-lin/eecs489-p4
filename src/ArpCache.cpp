@@ -97,6 +97,8 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
     std::unique_lock lock(mutex);
 
     // TODO: Your code below
+
+    // Assume that the packet has everything set except for the mac address
     AwaitingPacket queue_me;
     queue_me.packet = packet;
     queue_me.iface = iface;
@@ -117,7 +119,8 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
 
         // If there is no pending ARP request already, it is probably 
         // a good idea to send one out immediately. ED #827
-        //packetSender.sendPacket(packet, iface);
+        Packet arp_request(sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t));
+        sr_ethernet_hdr_t eth_hdr;
     }
     // ArpRequest already exists
     else {

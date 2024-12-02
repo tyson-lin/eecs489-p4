@@ -22,6 +22,11 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
 {
     std::unique_lock lock(mutex);
 
+    std::unordered_map<std::string, RoutingInterface> interfaces = routingTable->getRoutingInterfaces();
+    for (auto & [key, value] : interfaces) {
+        print_addr_eth(value.mac);
+    }
+
     if (packet.size() < sizeof(sr_ethernet_hdr_t))
     {
         spdlog::error("Packet is too small to contain an Ethernet header.");
@@ -29,14 +34,6 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     }
 
     // TODO: Your code below
-    
-    // Test routing table
-    // should not get honor coded because routing table tests dont cout anything
-    // only used locally
-    std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(3232235557); // 192.168.0.37
-    std::cout << "Result: ";
-    print_addr_ip_int(entry->gateway);
-    std::cout << "Correct: " << "100.1.0.10" << std::endl;  
 
     // Must first decide between ARP or IP 
     sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
@@ -58,9 +55,6 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
 
 void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string iface) {
     sr_ip_hdr_t* iphdr = (sr_ip_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
-
-    std::cout << "IP Packet: " << std::endl;
-    print_hdrs(packet.data(), packet.size());
 
     // Is the destination IP one of my interfaces?
     uint32_t ip_dst = ntohl(iphdr->ip_dst);
@@ -110,14 +104,10 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
     sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
 
     uint32_t target_ip_addr = ntohl(arp_hdr->ar_tip);
-    std::cout << "Target IP Address: ";
-    print_addr_ip_int(target_ip_addr);
 
     // Check if Target IP address isn't my IP address
     RoutingInterface arrival_interface = routingTable->getRoutingInterface(iface);
     ip_addr my_ip = ntohl(arrival_interface.ip);
-    std::cout << "Arrival IP Address: ";
-    print_addr_ip_int(my_ip);
     if (target_ip_addr != my_ip) {
         return; // drop the packet
     }

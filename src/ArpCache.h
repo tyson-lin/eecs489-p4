@@ -31,8 +31,6 @@ public:
 
     void queuePacket(uint32_t ip, const Packet& packet, const std::string& iface) override;
 
-    std::unordered_map<ip_addr, ArpRequest> requests;
-
 private:
     void loop();
 
@@ -46,6 +44,7 @@ private:
     std::shared_ptr<IRoutingTable> routingTable;
 
     std::unordered_map<ip_addr, ArpEntry> entries;
+    std::unordered_map<ip_addr, ArpRequest> requests;
 };
 
 
