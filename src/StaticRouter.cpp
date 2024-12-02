@@ -34,7 +34,7 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(3232235557); // 192.168.0.37
     std::cout << "Result: ";
     print_addr_ip_int(entry->gateway);
-    std::cout << "Correct: " << "10.0.1.100" << std::endl;
+    std::cout << "Correct: " << "100.1.0.10" << std::endl;
 
     // Must first decide between ARP or IP 
     sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
