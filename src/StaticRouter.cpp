@@ -29,6 +29,11 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     }
 
     // TODO: Your code below
+    
+    // Test routing table
+    RoutingEntry entry = routingTable->getRoutingEntry(3232235557) // 192.168.0.37
+    std::cout << "Result: " << entry.gateway << std::endl;
+    std::cout << "Correct: " << "10.0.1.100" << std::endl;
 
     // Must first decide between ARP or IP 
     sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
@@ -252,6 +257,7 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
 
     // Generate the ICMP header
     switch (type) {
+        // TODO: Type 11
         case 3:
             sr_icmp_t3_hdr_t* icmp_t3_hdr = (sr_icmp_t3_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
             icmp_t3_hdr->icmp_type = type;
