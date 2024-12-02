@@ -61,7 +61,7 @@ std::optional<RoutingEntry> RoutingTable::getRoutingEntry(ip_addr ip) {
 
     for (unsigned int i = 0; i < routingEntries.size(); i++) {
         uint32_t mask = routingEntries[i].mask;
-        uint32_t masked_gateway = routingEntries[i].gateway & mask;
+        uint32_t masked_gateway = routingEntries[i].dest & mask;
         uint32_t masked_input = ip & mask;
         if (masked_gateway == masked_input) {
             unsigned int match_length = netmaskToCIDR(mask);
