@@ -31,7 +31,7 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     // TODO: Your code below
     
     // Test routing table
-    RoutingEntry entry = routingTable->getRoutingEntry(3232235557); // 192.168.0.37
+    std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(3232235557); // 192.168.0.37
     std::cout << "Result: " << entry.gateway << std::endl;
     std::cout << "Correct: " << "10.0.1.100" << std::endl;
 
