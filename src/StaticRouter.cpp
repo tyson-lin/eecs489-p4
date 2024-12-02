@@ -32,7 +32,8 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     
     // Test routing table
     std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(3232235557); // 192.168.0.37
-    std::cout << "Result: " << print_addr_ip_int(entry->gateway) << std::endl;
+    std::cout << "Result: ";
+    print_addr_ip_int(entry->gateway);
     std::cout << "Correct: " << "10.0.1.100" << std::endl;
 
     // Must first decide between ARP or IP 
