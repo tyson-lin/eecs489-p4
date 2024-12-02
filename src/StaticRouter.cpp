@@ -325,6 +325,6 @@ void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterfac
         packetSender->sendPacket(packet, next_hop.iface);
     } else {
         // Add to ARP cache
-        arpCache->queuePacket(next_hop.destination, packet, next_hop.iface);
+        arpCache->queuePacket(next_hop.dest, packet, next_hop.iface);
     }
 }
