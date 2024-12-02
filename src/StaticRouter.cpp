@@ -24,7 +24,7 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
 
     std::unordered_map<std::string, RoutingInterface> interfaces = routingTable->getRoutingInterfaces();
     for (auto & [key, value] : interfaces) {
-        print_addr_eth(value.mac);
+        print_addr_eth(value.mac.data());
     }
 
     if (packet.size() < sizeof(sr_ethernet_hdr_t))
