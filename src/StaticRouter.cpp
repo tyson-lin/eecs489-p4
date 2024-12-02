@@ -320,11 +320,11 @@ void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterfac
 
     if (mac) {
         // Forward packet
-        memcpy(eth_hdr->ether_dhost, mac, ETHER_ADDR_LEN);
+        memcpy(eth_hdr->ether_dhost, *mac, ETHER_ADDR_LEN);
         memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
-        packetSender->sendPacket(packet, next_hop->iface);
+        packetSender->sendPacket(packet, next_hop.iface);
     } else {
         // Add to ARP cache
-        arpCache->queuePacket(next_hop->destination, packet, next_hop->iface);
+        arpCache->queuePacket(next_hop.destination, packet, next_hop.iface);
     }
 }
