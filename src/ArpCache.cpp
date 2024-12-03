@@ -140,11 +140,11 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
         for (int i = 0; i < ETHER_ADDR_LEN; i++) {
             arp_hdr.ar_sha[i] = routingTable->getRoutingInterface(iface).mac[i];
         }
-        memcpy(arp_hdr.ar_sip, &(routingTable->getRoutingInterface(iface).ip), sizeof(uint32_t))
+        memcpy(&arp_hdr.ar_sip, &(routingTable->getRoutingInterface(iface).ip), sizeof(uint32_t))
         for (int i = 0; i < ETHER_ADDR_LEN; i++) {
             arp_hdr.ar_tha[i] = 0x00;
         }
-        memcpy(arp_hdr.ar_tip, &ip, sizeof(uint32_t));
+        memcpy(&arp_hdr.ar_tip, &ip, sizeof(uint32_t));
 
         memcpy(arp_request.data()+sizeof(sr_ethernet_hdr_t), &arp_hdr, sizeof(sr_arp_hdr_t));
         
