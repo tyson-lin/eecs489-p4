@@ -20,11 +20,6 @@ struct AwaitingPacket {
   interface that the packet came in, the interface the packet is going out on,
   or even not use it at all. There are successful solutions that employ all
   three of these approaches. */
-
-  /**
-   * Let's assume that @iface is the interface on where the packet is going
-   *    -Tyson
-   */
 };
 
 struct ArpRequest {
@@ -69,7 +64,7 @@ public:
    */
 
   /**
-   * Let's assume that @iface is the interface on which the packet came in on
+   * Let's assume that @iface is the interface on where the packet is going
    *    -Tyson
    */
   virtual void queuePacket(uint32_t ip, const Packet &packet,

@@ -120,7 +120,19 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
         // If there is no pending ARP request already, it is probably 
         // a good idea to send one out immediately. ED #827
         Packet arp_request(sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t));
+
         sr_ethernet_hdr_t eth_hdr;
+        for (int i = 0; i < ETHER_ADDR_LEN; i++) {
+            eth_hdr.ether_dhost[i] = 0xff;
+        }
+        for (int i = 0; i < ETHER_ADDR_LEN; i++) {
+            eth_hdr.ether_shost[i] = routingTable.getRoutingInterfae(iface).mac_addr[i];
+        }
+        eth_hdr.ether_type = ethertype_arp;
+        memcpy(arp_request.data(), &eth_hdr, sizeof(sr_ethernet_hdr_t));
+
+        sr_arp_hdr_t arp_hdr;
+        
     }
     // ArpRequest already exists
     else {

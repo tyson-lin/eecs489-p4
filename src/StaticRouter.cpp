@@ -34,6 +34,7 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     }
 
     // TODO: Your code below
+    print_hdrs(packet.data(), packet.size());
 
     // Must first decide between ARP or IP 
     sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
