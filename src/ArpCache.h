@@ -16,6 +16,8 @@
 #include "RouterTypes.h"
 #include "IRoutingTable.h"
 
+#include <iostream>
+
 class ArpCache : public IArpCache {
 public:
     ArpCache(std::chrono::milliseconds timeout,
