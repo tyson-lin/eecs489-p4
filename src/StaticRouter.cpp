@@ -41,9 +41,11 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
 
     switch (ethtype) {
         case ethertype_arp:
+            std::cout << "Handling ARP packet" << std::endl;
             handleARP_Packet(packet, iface);
             break;
         case ethertype_ip:
+            std::cout << "Handling IP packet" << std::endl;
             handleIP_Packet(packet, iface);
             break;
         default:
