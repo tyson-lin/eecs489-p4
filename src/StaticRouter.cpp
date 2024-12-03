@@ -79,11 +79,15 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     bool exists = false;
     for (const auto& [key, interface] : interfaces) {
         std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(interface.ip);
+        // Only for testing sending a request
+        arpCache->queuePacket(entry.dest, packet, entry.iface);
         if (entry) {
             exists = true;
             break;
         }
     }
+
+    
 
     if (exists) {
         // forward
@@ -309,8 +313,7 @@ void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterfac
     if (mac) {
         // Forward packet
 
-        // Only for testing sending a request
-        arpCache->queuePacket(next_hop.dest, packet, next_hop.iface);
+        
 
         memcpy(eth_hdr->ether_dhost, mac->data(), ETHER_ADDR_LEN);
         memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
