@@ -137,7 +137,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
         arp_hdr.ar_pro = htons(2048);
         arp_hdr.ar_hln = 6;
         arp_hdr.ar_pln = 4;
-        arp_hdr.ar_op = arp_op_request;
+        arp_hdr.ar_op = htons(arp_op_request);
         for (int i = 0; i < ETHER_ADDR_LEN; i++) {
             arp_hdr.ar_sha[i] = routingTable->getRoutingInterface(iface).mac[i];
         }
