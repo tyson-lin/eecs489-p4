@@ -129,7 +129,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
         for (int i = 0; i < ETHER_ADDR_LEN; i++) {
             eth_hdr.ether_shost[i] = routingTable->getRoutingInterface(iface).mac[i];
         }
-        eth_hdr.ether_type = ethertype_arp;
+        eth_hdr.ether_type = htons(ethertype_arp);
         memcpy(arp_request.data(), &eth_hdr, sizeof(sr_ethernet_hdr_t));
 
         sr_arp_hdr_t arp_hdr;
