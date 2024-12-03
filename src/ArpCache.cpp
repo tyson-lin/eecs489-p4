@@ -133,8 +133,8 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
         memcpy(arp_request.data(), &eth_hdr, sizeof(sr_ethernet_hdr_t));
 
         sr_arp_hdr_t arp_hdr;
-        arp_hdr.ar_hrd = arp_hrd_ethernet;
-        arp_hdr.ar_pro = 2048;
+        arp_hdr.ar_hrd = htons(arp_hrd_ethernet);
+        arp_hdr.ar_pro = htons(2048);
         arp_hdr.ar_hln = 6;
         arp_hdr.ar_pln = 4;
         arp_hdr.ar_op = arp_op_request;
