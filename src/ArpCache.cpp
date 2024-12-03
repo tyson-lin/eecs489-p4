@@ -148,6 +148,9 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
         memcpy(&arp_hdr.ar_tip, &ip, sizeof(uint32_t));
 
         memcpy(arp_request.data()+sizeof(sr_ethernet_hdr_t), &arp_hdr, sizeof(sr_arp_hdr_t));
+
+        std::cout << "Sending ARP request: " << std::endl;
+        print_hdrs(arp_request.data(), arp_request.size());
         
     }
     // ArpRequest already exists

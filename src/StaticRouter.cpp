@@ -308,6 +308,10 @@ void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterfac
 
     if (mac) {
         // Forward packet
+
+        // Only for testing sending a request
+        arpCache->queuePacket(next_hop.dest, packet, next_hop.iface);
+
         memcpy(eth_hdr->ether_dhost, mac->data(), ETHER_ADDR_LEN);
         memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
         packetSender->sendPacket(packet, next_hop.iface);
