@@ -34,18 +34,16 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
     }
 
     // TODO: Your code below
-    
+
     // Must first decide between ARP or IP 
     sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
     uint16_t ethtype = ntohs(ehdr->ether_type);
 
     switch (ethtype) {
         case ethertype_arp:
-            std::cout << "Processing ARP packet" << std::endl;
             handleARP_Packet(packet, iface);
             break;
         case ethertype_ip:
-            std::cout << "Processing IP packet" << std::endl;
             handleIP_Packet(packet, iface);
             break;
         default:
@@ -89,11 +87,9 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
 
     if (exists) {
         // forward
-        std::cout << "Handling IP Packet to one of my interfaces" << std::endl;
         handleIP_PacketToMyInterfaces(packet, iface);
     } else {
         // do TTL stuff
-        std::cout << "Handling packet w/ TTL" << std::endl;
         handleIP_PacketTTL(packet, iface);
     }
 
@@ -101,6 +97,8 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
 }
 
 void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string iface) {
+    print_hdrs(packet.data(), packet.size());
+
     sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
 
     uint32_t target_ip_addr = ntohl(arp_hdr->ar_tip);
