@@ -80,7 +80,7 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     for (const auto& [key, interface] : interfaces) {
         std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(interface.ip);
         // Only for testing sending a request
-        arpCache->queuePacket(entry.dest, packet, entry.iface);
+        arpCache->queuePacket(entry->dest, packet, entry->iface);
         if (entry) {
             exists = true;
             break;
