@@ -132,6 +132,21 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
         memcpy(arp_request.data(), &eth_hdr, sizeof(sr_ethernet_hdr_t));
 
         sr_arp_hdr_t arp_hdr;
+        arp_hdr.ar_hrd = arp_hrd_ethernet;
+        arp_hdr.ar_pro = 2048;
+        arp_hdr.ar_hln = 6;
+        arp_hdr.ar_pln = 4;
+        arp_hdr.ar_op = arp_op_request;
+        for (int i = 0; i < ETHER_ADDR_LEN; i++) {
+            arp_hdr.ar_sha[i] = routingTable->getRoutingInterface(iface).mac[i];
+        }
+        memcpy(arp_hdr.ar_sip, &(routingTable->getRoutingInterface(iface).ip), sizeof(uint32_t))
+        for (int i = 0; i < ETHER_ADDR_LEN; i++) {
+            arp_hdr.ar_tha[i] = 0x00;
+        }
+        memcpy(arp_hdr.ar_tip, &ip, sizeof(uint32_t));
+
+        memcpy(arp_request.data()+sizeof(sr_ethernet_hdr_t), &arp_hdr, sizeof(sr_arp_hdr_t));
         
     }
     // ArpRequest already exists
