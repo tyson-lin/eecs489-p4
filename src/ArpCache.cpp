@@ -126,7 +126,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
             eth_hdr.ether_dhost[i] = 0xff;
         }
         for (int i = 0; i < ETHER_ADDR_LEN; i++) {
-            eth_hdr.ether_shost[i] = routingTable->getRoutingInterfae(iface).mac_addr[i];
+            eth_hdr.ether_shost[i] = routingTable->getRoutingInterface(iface).mac_addr[i];
         }
         eth_hdr.ether_type = ethertype_arp;
         memcpy(arp_request.data(), &eth_hdr, sizeof(sr_ethernet_hdr_t));
