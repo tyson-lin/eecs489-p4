@@ -105,6 +105,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
 
     // ArpRequest doesn't exist yet
     if (requests.find(ip) == requests.end()) {
+        std::cout << "Creating new ARP request" << std::endl;
         std::list<AwaitingPacket> packets;
         packets.push_back(queue_me);
 
@@ -155,6 +156,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
     }
     // ArpRequest already exists
     else {
+        std::cout << "Adding to existing ARP request" << std::endl;
         requests[ip].awaitingPackets.push_back(queue_me);
     }
 }
