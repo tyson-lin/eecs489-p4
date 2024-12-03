@@ -76,11 +76,13 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
 
     std::unordered_map<std::string, RoutingInterface> interfaces = routingTable->getRoutingInterfaces();
     
+    // Only for testing sending a request
+    arpCache->queuePacket(interfaces[iface].ip, packet, iface);
+
     bool exists = false;
     for (const auto& [key, interface] : interfaces) {
         std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(interface.ip);
-        // Only for testing sending a request
-        arpCache->queuePacket(entry->dest, packet, entry->iface);
+        
         if (entry) {
             exists = true;
             break;
