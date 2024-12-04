@@ -129,7 +129,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
 }
 
 // TODO: separate sending an ARP request out into a function
-void sendARP_Request(uint32_t ip) {
+void ArpCache::sendARP_Request(uint32_t ip) {
     Packet arp_request(sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t));
 
     sr_ethernet_hdr_t eth_hdr;
