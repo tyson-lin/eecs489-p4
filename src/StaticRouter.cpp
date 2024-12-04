@@ -100,8 +100,6 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
 }
 
 void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string iface) {
-    print_hdrs(packet.data(), packet.size());
-
     sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
 
     uint32_t target_ip_addr = ntohl(arp_hdr->ar_tip);
