@@ -48,7 +48,7 @@ private:
     std::unordered_map<ip_addr, ArpEntry> entries;
     std::unordered_map<ip_addr, ArpRequest> requests;
 
-    void sendARP_Request(uint32_t ip);
+    void sendARP_Request(uint32_t ip, const std::string &iface);
 };
 
 

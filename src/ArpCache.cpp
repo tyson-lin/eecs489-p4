@@ -119,7 +119,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
 
         // If there is no pending ARP request already, it is probably 
         // a good idea to send one out immediately. ED #827
-        sendARP_Request(ip);
+        sendARP_Request(ip, iface);
     }
     // ArpRequest already exists
     else {
@@ -129,7 +129,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
 }
 
 // TODO: separate sending an ARP request out into a function
-void ArpCache::sendARP_Request(uint32_t ip) {
+void ArpCache::sendARP_Request(uint32_t ip, const std::string &iface) {
     Packet arp_request(sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t));
 
     sr_ethernet_hdr_t eth_hdr;
