@@ -90,9 +90,11 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
 
     if (exists) {
         // forward
+        std::cout << "Handling IP packet to one of my interfaces" << std::endl;
         handleIP_PacketToMyInterfaces(packet, iface);
     } else {
         // do TTL stuff
+        std::cout << "Handling packet TTL stuff" << std::endl;
         handleIP_PacketTTL(packet, iface);
     }
 
@@ -115,9 +117,11 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
     sr_arp_opcode opcode = (sr_arp_opcode)ntohs(arp_hdr->ar_op);
     switch (opcode) {
         case arp_op_request:
+            std::cout << "Sending ARP response" << std::endl;
             sendARP_Response(packet, iface);
             break;
         case arp_op_reply:
+            std::cout << "Sending ARP reply" << std::endl;
             handleARP_Response(packet, iface);
             break;
         default:
@@ -193,10 +197,12 @@ void StaticRouter::handleIP_PacketToMyInterfaces(std::vector<uint8_t> packet, st
     
     switch (iphdr->ip_p) {
         case ip_protocol_icmp:
+            std::cout << "Sending ICMP packet 0 0" << std::endl;
             sendICMP_Packet(packet, iface, 0, 0);
             return;
         case ip_protocol_tcp:
         case ip_protocol_udp:
+            std::cout << "Sending ICMP packet 3 3" << std::endl;
             sendICMP_Packet(packet, iface, 3, 3);
             return;
         default:
@@ -209,16 +215,20 @@ void StaticRouter::handleIP_PacketTTL(std::vector<uint8_t> packet, std::string i
 
     switch (iphdr->ip_ttl) {
         case 0: // drop the packet
+            std::cout << "Packet TTL=0, dropping packet" << std::endl;
             return; 
-        case 1: 
+        case 1:    
+            std::cout << "Sending ICMP packet 11 0" << std::endl;
             sendICMP_Packet(packet, iface, 11, 0);
             return;
         default: // TTL>1
             // is destination IP in routing table ?
             std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(iphdr->ip_dst);
             if (!entry) {
+                std::cout << "Sending ICMP packet 3 0" << std::endl;
                 sendICMP_Packet(packet, iface, 3, 0); // not in table
             } else {
+                std::cout << "Forwarding IP Packet" << std::endl;
                 forwardIP_Packet(packet, routingTable->getRoutingInterface(entry->iface), *entry);
             }
             return;
@@ -309,13 +319,12 @@ void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterfac
 
     if (mac) {
         // Forward packet
-
-        
-
+        std::cout << "Destination mac address found in ARP cache, forwarding" << std::endl;
         memcpy(eth_hdr->ether_dhost, mac->data(), ETHER_ADDR_LEN);
         memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
         packetSender->sendPacket(packet, next_hop.iface);
     } else {
+        std::cout << "Queuing packet into ARP cache" << std::endl;
         // Add to ARP cache
         arpCache->queuePacket(next_hop.dest, packet, next_hop.iface);
     }
