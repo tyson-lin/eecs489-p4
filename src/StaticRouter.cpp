@@ -58,10 +58,7 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
 
     // Is the destination IP one of my interfaces?
     uint32_t ip_dst = ntohl(iphdr->ip_dst);
-
-    uint8_t ip_packet_type = iphdr->ip_p;
-    swit
-
+    
     // Is the IP packet checksum invalid?
     uint16_t received_checksum = iphdr->ip_sum;
     iphdr->ip_sum = 0;
