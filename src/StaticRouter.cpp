@@ -59,6 +59,9 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     // Is the destination IP one of my interfaces?
     uint32_t ip_dst = ntohl(iphdr->ip_dst);
 
+    uint8_t ip_packet_type = iphdr->ip_p;
+    swit
+
     // Is the IP packet checksum invalid?
     uint16_t received_checksum = iphdr->ip_sum;
     iphdr->ip_sum = 0;
@@ -69,14 +72,16 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     }
 
     // Is the ICMP packet checksum invalid?
-    sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t));
-    uint16_t received_icmp_checksum = icmp_hdr->icmp_sum;
-    icmp_hdr->icmp_sum = 0;
-    uint16_t correct_icmp_checksum = cksum(icmp_hdr, packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
-    if (received_icmp_checksum != correct_icmp_checksum) {
-        print_hdrs(packet.data(), packet.size());
-        std::cout << "ICMP checksum invalid" << std::endl;
-        return;
+    if (iphdr->ip_p == ip_protocol_icmp) {
+        sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t));
+        uint16_t received_icmp_checksum = icmp_hdr->icmp_sum;
+        icmp_hdr->icmp_sum = 0;
+        uint16_t correct_icmp_checksum = cksum(icmp_hdr, packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
+        if (received_icmp_checksum != correct_icmp_checksum) {
+            print_hdrs(packet.data(), packet.size());
+            std::cout << "ICMP checksum invalid" << std::endl;
+            return;
+        }
     }
 
     std::unordered_map<std::string, RoutingInterface> interfaces = routingTable->getRoutingInterfaces();
