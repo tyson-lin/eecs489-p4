@@ -133,13 +133,13 @@ void ArpCache::sendARP_Request(uint32_t ip, const std::string &iface) {
     Packet arp_request(sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t));
 
     sr_ethernet_hdr_t eth_hdr;
-    for (int i = 0; i < ETHER_ADDR_LEN; i++) {
-        eth_hdr.ether_dhost[i] = 0xff;
-    }
-    for (int i = 0; i < ETHER_ADDR_LEN; i++) {
-        eth_hdr.ether_shost[i] = routingTable->getRoutingInterface(iface).mac[i];
-    }
+    memset(&eth_hdr.ether_dhost, 0xff, ETHER_ADDR_LEN);
+    
+    RoutingInterface interface = routingTable->getRoutingInterface(iface);
+    memcpy(&eth_hdr.ether_shost, interface.mac.data(), ETHER_ADDR_LEN);
+
     eth_hdr.ether_type = htons(ethertype_arp);
+
     memcpy(arp_request.data(), &eth_hdr, sizeof(sr_ethernet_hdr_t));
 
     sr_arp_hdr_t arp_hdr;
@@ -148,15 +148,12 @@ void ArpCache::sendARP_Request(uint32_t ip, const std::string &iface) {
     arp_hdr.ar_hln = 6;
     arp_hdr.ar_pln = 4;
     arp_hdr.ar_op = htons(arp_op_request);
-    for (int i = 0; i < ETHER_ADDR_LEN; i++) {
-        arp_hdr.ar_sha[i] = routingTable->getRoutingInterface(iface).mac[i];
-    }
-
+    memcpy(&arp_hdr.ar_sha, interface.mac.data(), ETHER_ADDR_LEN);
     memcpy(&arp_hdr.ar_sip, &ip, sizeof(uint32_t));
-    for (int i = 0; i < ETHER_ADDR_LEN; i++) {
-        arp_hdr.ar_tha[i] = 0x00;
-    }
-    memcpy(&arp_hdr.ar_tip, &ip, sizeof(uint32_t));
+    memset(&arp_hdr.ar_tha, 0x00, ETHER_ADDR_LEN);
+    memcpy(&arp_hdr.ar_tip, &interface.ip, sizeof(uint32_t));
 
     memcpy(arp_request.data()+sizeof(sr_ethernet_hdr_t), &arp_hdr, sizeof(sr_arp_hdr_t));  
+
+    packetSender->sendPacket(arp_request, iface);
 }
