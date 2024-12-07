@@ -55,23 +55,26 @@ static unsigned int netmaskToCIDR(uint32_t netmask) {
 
 std::optional<RoutingEntry> RoutingTable::getRoutingEntry(ip_addr ip) {
     // TODO: Your code below
+    unsigned int longest_match_index = -1;
     unsigned int longest_match_length = 0;
-    RoutingEntry best_entry = routingEntries[0];
 
-    for (RoutingEntry & entry : routingEntries) {
-        if (entry.mask & ip == entry.mask & entry.dest) {
-            if (netmaskToCIDR(entry.mask) > longest_match_length) {
-                best_entry = entry;
-                longest_match_length = netmaskToCIDR(entry.mask); 
+    for (unsigned int i = 0; i < routingEntries.size(); i++) {
+        uint32_t mask = routingEntries[i].mask;
+        uint32_t masked_gateway = routingEntries[i].dest & mask;
+        uint32_t masked_input = ip & mask;
+        if (masked_gateway == masked_input) {
+            unsigned int match_length = netmaskToCIDR(mask);
+            if (match_length > longest_match_length) {
+                longest_match_index = i;
+                longest_match_length = match_length;
             }
         }
     }
-
-    if (longest_match_length != 0) {
-        return best_entry;
+    if (longest_match_index != -1) {
+        return routingEntries[longest_match_index];
+    } else {
+        return std::nullopt;
     }
-
-    return routingEntries[0]; // Placeholder
 }
 
 RoutingInterface RoutingTable::getRoutingInterface(const std::string& iface) {
