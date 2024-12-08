@@ -45,10 +45,26 @@ void ArpCache::tick() {
 
     // once per ip addr per second ED #844
 
-    for (auto & request : requests) {
-        // check 
-    }
+    for (auto it = requests.begin(); it != requests.end();) {
+        ArpRequest* request = &(it->second);
 
+        auto current_time = std::chrono::steady_clock::now();
+        auto duration = current_time - request->lastSent;
+        auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+
+        if (duration_ms > 1000) {
+            if (request->timesSent < 7) {
+                std::optional<RoutingEntry> next_hop = routingTable->getRoutingEntry(request->ip);
+                sendARP_Request(request->ip, next_hop->iface);
+                request->timesSent += 1;
+                std::cout << "Sending ARP request number " << request->timesSent << std::endl;
+                ++it;
+                request->lastSent = current_time;
+            } else {
+                it = requests.erase(it); 
+            }
+        }
+    }
 
     // TODO: Your code should end here
 
@@ -119,6 +135,7 @@ void ArpCache::queuePacket(uint32_t ip, const Packet& packet, const std::string&
 
         // If there is no pending ARP request already, it is probably 
         // a good idea to send one out immediately. ED #827
+        std::cout << "Sending ARP request number 1" << std::endl;
         sendARP_Request(ip, iface);
     }
     // ArpRequest already exists
@@ -149,11 +166,19 @@ void ArpCache::sendARP_Request(uint32_t ip, const std::string &iface) {
     arp_hdr.ar_pln = 4;
     arp_hdr.ar_op = htons(arp_op_request);
     memcpy(&arp_hdr.ar_sha, interface.mac.data(), ETHER_ADDR_LEN);
-    memcpy(&arp_hdr.ar_sip, &ip, sizeof(uint32_t));
+    memcpy(&arp_hdr.ar_sip, &interface.ip, sizeof(uint32_t));
     memset(&arp_hdr.ar_tha, 0x00, ETHER_ADDR_LEN);
     memcpy(&arp_hdr.ar_tip, &interface.ip, sizeof(uint32_t));
 
     memcpy(arp_request.data()+sizeof(sr_ethernet_hdr_t), &arp_hdr, sizeof(sr_arp_hdr_t));  
 
+    // std::cout << "Sending on interface:" << std::endl;
+    // std::cout << interface.name << std::endl;
+    // print_addr_eth(interface.mac.data());
+    // print_addr_ip_int(interface.ip);
+
     packetSender->sendPacket(arp_request, iface);
+
+    // std::cout << std::endl << "MY ARP REQUEST" << std::endl;
+    // print_hdrs(arp_request.data(), arp_request.size());
 }
