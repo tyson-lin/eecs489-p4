@@ -48,6 +48,7 @@ private:
     std::unordered_map<ip_addr, ArpEntry> entries;
     std::unordered_map<ip_addr, ArpRequest> requests;
 
+    void send_host_unreachable(Packet packet);
     void sendARP_Request(uint32_t ip, const std::string &iface);
 };
 

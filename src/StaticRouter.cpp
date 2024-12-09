@@ -348,8 +348,8 @@ void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterfac
         memcpy(eth_hdr->ether_dhost, mac->data(), ETHER_ADDR_LEN);
         memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
 
-        std::cout << "Forwarding packet: " << std::endl;
-        print_hdrs(packet.data(), packet.size());
+        // std::cout << "Forwarding packet: " << std::endl;
+        // print_hdrs(packet.data(), packet.size());
         packetSender->sendPacket(packet, next_hop.iface);
     } else {
         std::cout << "Queuing packet into ARP cache" << std::endl;
