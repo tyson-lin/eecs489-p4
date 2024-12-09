@@ -79,6 +79,9 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
 
     // TODO: Your code below
 
+    std::cout << "Adding ArpCache entry for IP";
+    print_addr_ip_int(ip); 
+
     // Entry already exists in cache
     if (entries.find(ip) != entries.end()) {
         return;
@@ -92,16 +95,38 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
     std::pair<ip_addr,ArpEntry> entry(ip, new_entry);
     entries.insert(entry);
 
-    // TODO: i assume i need to use the information in the ARP response to update all the awaiting packets
     // forward awaiting packets
+    ArpRequest request = requests[ip];
+    std::cout << "Forwarding " << request.awaitingPackets.size() << " awaiting packets for ";
+    print_addr_ip_int(ip);
+
+    for (AwaitingPacket & awaiting_packet : request.awaitingPackets) {
+        Packet packet = awaiting_packet.packet;
+        // fix the ethernet header
+        sr_ethernet_hdr_t * eth_hdr = (sr_ethernet_hdr_t*)packet.data();
+        memcpy(eth_hdr->ether_dhost, mac.data(), ETHER_ADDR_LEN);
+        memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
+
+        std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(ip);
+        packetSender->sendPacket(packet, entry->iface);
+
+        std::cout << "Forwarding packet" << std::endl;
+        print_hdrs(packet.data(), packet.size());
+    }
+    requests.erase(ip);
 }
 
 std::optional<mac_addr> ArpCache::getEntry(uint32_t ip) {
     std::unique_lock lock(mutex);
 
     // TODO: Your code below
+    std::cout << "Searching ArpCache for IP";
+    print_addr_ip_int(ip); 
+
     if (entries.find(ip) != entries.end()) {
         ArpEntry desired_entry = entries.at(ip);
+        std::cout << "Resulting MAC address";
+        print_addr_eth(desired_entry.mac.data());
         return desired_entry.mac;
     }
 
@@ -153,6 +178,7 @@ void ArpCache::sendARP_Request(uint32_t ip, const std::string &iface) {
     memset(&eth_hdr.ether_dhost, 0xff, ETHER_ADDR_LEN);
     
     RoutingInterface interface = routingTable->getRoutingInterface(iface);
+    std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(ip);
     memcpy(&eth_hdr.ether_shost, interface.mac.data(), ETHER_ADDR_LEN);
 
     eth_hdr.ether_type = htons(ethertype_arp);
@@ -166,9 +192,9 @@ void ArpCache::sendARP_Request(uint32_t ip, const std::string &iface) {
     arp_hdr.ar_pln = 4;
     arp_hdr.ar_op = htons(arp_op_request);
     memcpy(&arp_hdr.ar_sha, interface.mac.data(), ETHER_ADDR_LEN);
-    memcpy(&arp_hdr.ar_sip, &interface.ip, sizeof(uint32_t));
+    memcpy(&arp_hdr.ar_sip, &(interface.ip), sizeof(uint32_t));
     memset(&arp_hdr.ar_tha, 0x00, ETHER_ADDR_LEN);
-    memcpy(&arp_hdr.ar_tip, &interface.ip, sizeof(uint32_t));
+    memcpy(&arp_hdr.ar_tip, &(entry->gateway), sizeof(uint32_t));
 
     memcpy(arp_request.data()+sizeof(sr_ethernet_hdr_t), &arp_hdr, sizeof(sr_arp_hdr_t));  
 

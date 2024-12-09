@@ -35,6 +35,8 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface)
 
     // TODO: Your code below
 
+    std::cout << std::endl << "HANDLE PACKET START ----------------------------" << std::endl;
+
     // Must first decide between ARP or IP 
     sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
     uint16_t ethtype = ntohs(ehdr->ether_type);
@@ -133,8 +135,8 @@ void StaticRouter::handleARP_Packet(std::vector<uint8_t> packet, std::string ifa
 }
 
 void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string iface) {
-    std::cout << std::endl << "CORRECT ARP REQUEST" << std::endl;
-    print_hdrs(packet.data(), packet.size());
+    // std::cout << std::endl << "CORRECT ARP REQUEST" << std::endl;
+    // print_hdrs(packet.data(), packet.size());
 
     RoutingInterface arrival_interface = routingTable->getRoutingInterface(iface);
     mac_addr arrival_mac_addr = arrival_interface.mac;
@@ -177,20 +179,20 @@ void StaticRouter::sendARP_Response(std::vector<uint8_t> packet, std::string ifa
 }
 
 void StaticRouter::handleARP_Response(std::vector<uint8_t> packet, std::string iface) {
-    // IP address associated with this interface
-    RoutingInterface arrival_iface = routingTable->getRoutingInterface(iface);
-    ip_addr arrival_ip = arrival_iface.ip;
+    std::cout << "ARP Response: " << std::endl;
+    print_hdrs(packet.data(), packet.size());
+
+    // IP address associated with this interface]
+    sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t));
+    ip_addr sender_ip_addr = arp_hdr->ar_sip;
 
     // Have I issued this response?
-    std::optional<mac_addr> entry_mac_addr = arpCache->getEntry(arrival_ip);
+    std::optional<mac_addr> entry_mac_addr = arpCache->getEntry(sender_ip_addr);
     if (entry_mac_addr) {
         return; // Entry already exists in ARP cache
     }
 
     // Cache ARP
-    sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
-    ip_addr sender_ip_addr = ntohl(arp_hdr->ar_sip);
-    
     mac_addr sender_mac_addr;
     memcpy(sender_mac_addr.data(), arp_hdr->ar_sha, ETHER_ADDR_LEN);
 
@@ -228,11 +230,11 @@ void StaticRouter::handleIP_PacketTTL(std::vector<uint8_t> packet, std::string i
             return;
         default: // TTL>1
             // is destination IP in routing table ?
-            std::cout << "IP header final dest";
-            print_addr_ip_int(iphdr->ip_dst);
+            // std::cout << "IP header final dest";
+            // print_addr_ip_int(iphdr->ip_dst);
             std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(iphdr->ip_dst);
-            std::cout << "Next hop gateway";
-            print_addr_ip_int(entry->gateway);
+            // std::cout << "Next hop gateway";
+            // print_addr_ip_int(entry->gateway);
             if (!entry) {
                 std::cout << "Sending ICMP packet 3 0" << std::endl;
                 sendICMP_Packet(packet, iface, 3, 0); // not in table
@@ -316,27 +318,38 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
 }
 
 void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterface interface, RoutingEntry next_hop) {
+    std::cout << "Packet to be forwarded: " << std::endl;
+    print_hdrs(packet.data(), packet.size());
+
     sr_ethernet_hdr_t* eth_hdr = (sr_ethernet_hdr_t*)packet.data();
     sr_ip_hdr_t* iphdr = (sr_ip_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
     // let's prepare our new packet - we know everything but the destination mac addr
 
     // Generate IP header
     iphdr->ip_ttl -= 1;
-    iphdr->ip_src = next_hop.gateway;
     iphdr->ip_sum = 0;
     iphdr->ip_sum = cksum(iphdr, sizeof(sr_ip_hdr_t));
     memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), iphdr, sizeof(sr_ip_hdr_t));
 
+    // Verify ICMP header checksum
+    sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t));
+    icmp_hdr->icmp_sum = 0;
+    int icmp_header_size = packet.size() - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
+    icmp_hdr->icmp_sum = cksum(icmp_hdr, icmp_header_size);
+    memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_hdr, sizeof(sr_icmp_hdr_t));
+
     // Generate ethernet header
     memcpy(eth_hdr->ether_shost, interface.mac.data(), ETHER_ADDR_LEN);
-
-    std::optional<mac_addr> mac = arpCache->getEntry(next_hop.dest);
+    std::optional<mac_addr> mac = arpCache->getEntry(next_hop.gateway);
 
     if (mac) {
         // Forward packet
         std::cout << "Destination mac address found in ARP cache, forwarding" << std::endl;
         memcpy(eth_hdr->ether_dhost, mac->data(), ETHER_ADDR_LEN);
         memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
+
+        std::cout << "Forwarding packet: " << std::endl;
+        print_hdrs(packet.data(), packet.size());
         packetSender->sendPacket(packet, next_hop.iface);
     } else {
         std::cout << "Queuing packet into ARP cache" << std::endl;

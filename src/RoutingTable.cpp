@@ -112,6 +112,7 @@ std::optional<RoutingEntry> RoutingTable::getRoutingEntry(ip_addr ip) {
     } else {
         return std::nullopt;
     }
+    return std::nullopt;
 }
 
 RoutingInterface RoutingTable::getRoutingInterface(const std::string& iface) {
