@@ -87,7 +87,7 @@ void StaticRouter::handleIP_Packet(std::vector<uint8_t> packet, std::string ifac
     std::unordered_map<std::string, RoutingInterface> interfaces = routingTable->getRoutingInterfaces();
     bool exists = false;
     for (const auto& [key, interface] : interfaces) {
-        if (iphdr->ip_p == interface.ip) {
+        if (iphdr->ip_dst == interface.ip) {
             exists = true;
         }
     }
@@ -208,6 +208,9 @@ void StaticRouter::handleIP_PacketToMyInterfaces(std::vector<uint8_t> packet, st
             sendICMP_Packet(packet, iface, 0, 0);
             return;
         case ip_protocol_tcp:
+            std::cout << "Sending ICMP packet 3 3" << std::endl;
+            sendICMP_Packet(packet, iface, 3, 3);
+            return;
         case ip_protocol_udp:
             std::cout << "Sending ICMP packet 3 3" << std::endl;
             sendICMP_Packet(packet, iface, 3, 3);
@@ -368,39 +371,47 @@ void StaticRouter::send_time_exceeded(Packet packet, std::string iface) {
 }
 
 void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code) {
-    sr_ethernet_hdr_t* ehdr = (sr_ethernet_hdr_t*)packet.data();
-    sr_ip_hdr_t* iphdr = (sr_ip_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t));
-
-    std::optional<RoutingEntry> next_hop = routingTable->getRoutingEntry(iphdr->ip_src);
+    sr_ethernet_hdr_t ehdr;
+    memcpy(&ehdr,packet.data(),sizeof(sr_ethernet_hdr_t));
+    sr_ip_hdr_t iphdr; 
+    memcpy(&iphdr,packet.data()+sizeof(sr_ethernet_hdr_t), sizeof(sr_ip_hdr_t));
+    std::optional<RoutingEntry> next_hop = routingTable->getRoutingEntry(iphdr.ip_src);
     // if not there, just drop it
     if (!next_hop) {
-        std::optional<mac_addr> entry = arpCache->getEntry(iphdr->ip_src);
+        std::optional<mac_addr> entry = arpCache->getEntry(iphdr.ip_src);
     }
 
     // Generate the IP header
     // theoretically all we need to do is swap source and destination
     uint32_t temp_ip;
-    std::memcpy(&temp_ip, &iphdr->ip_src, sizeof(temp_ip)); // Copy sender IP into temp
-    std::memcpy(&iphdr->ip_src, &iphdr->ip_dst, sizeof(temp_ip)); // Replace sender IP with target IP
-    std::memcpy(&iphdr->ip_dst, &temp_ip, sizeof(temp_ip)); // Replace target IP with original sender IP
+    std::memcpy(&temp_ip, &iphdr.ip_src, sizeof(temp_ip)); // Copy sender IP into temp
+    std::memcpy(&iphdr.ip_src, &iphdr.ip_dst, sizeof(temp_ip)); // Replace sender IP with target IP
+    std::memcpy(&iphdr.ip_dst, &temp_ip, sizeof(temp_ip)); // Replace target IP with original sender IP
 
-    iphdr->ip_sum = 0;
-    iphdr->ip_sum = cksum(iphdr, sizeof(sr_ip_hdr_t));
+    iphdr.ip_sum = 0;
+    iphdr.ip_sum = cksum(&iphdr, sizeof(sr_ip_hdr_t));
 
-    std::memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), iphdr, sizeof(sr_ip_hdr_t));
+    std::memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), &iphdr, sizeof(sr_ip_hdr_t));
 
     // First generate the ethernet header
     RoutingInterface arrival_interface = routingTable->getRoutingInterface(iface);
     mac_addr arrival_mac_addr = arrival_interface.mac;
-    
+
+    mac_addr dest_mac_addr;
+    std::memcpy(dest_mac_addr.data(), ehdr.ether_shost, sizeof(mac_addr));    
     // do we know the destination mac addr?
     
 
     for (int i = 0; i < ETHER_ADDR_LEN; i++) { 
         // set the source to be the mac addr of the arrival interface
-        ehdr->ether_shost[i] = arrival_mac_addr[i];
+        ehdr.ether_shost[i] = arrival_mac_addr[i];
     }
-    std::memcpy(packet.data(), ehdr, sizeof(sr_ethernet_hdr_t));
+
+    for (int i = 0; i < ETHER_ADDR_LEN; i++) { 
+        // set the dest to be the mac addr of the dest interface
+        ehdr.ether_dhost[i] = dest_mac_addr[i];
+    }
+    std::memcpy(packet.data(), &ehdr, sizeof(sr_ethernet_hdr_t));
 
     // packet type shouldn't change
 
@@ -408,17 +419,32 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
     switch (type) {
         // TODO: Type 11
         case 3: {
-            sr_icmp_t3_hdr_t* icmp_t3_hdr = (sr_icmp_t3_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
-            icmp_t3_hdr->icmp_type = type;
-            icmp_t3_hdr->icmp_code = code;
-            icmp_t3_hdr->icmp_sum = 0;
-            icmp_t3_hdr->unused = 0;
-            icmp_t3_hdr->next_mtu = 1500;
+            std::vector<uint8_t> help(sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t));
+            memcpy(help.data(), &ehdr, sizeof(sr_ethernet_hdr_t));
+            iphdr.ip_p = ip_protocol_icmp;
+            iphdr.ip_id = htons(0);
+            iphdr.ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t));
+            iphdr.ip_off = htons(0);
+            iphdr.ip_tos = 0;
+            iphdr.ip_ttl = 64;
+            iphdr.ip_sum = 0;
+            iphdr.ip_sum = cksum(&iphdr, sizeof(sr_ip_hdr_t));
+            memcpy(help.data() + sizeof(sr_ethernet_hdr_t), &iphdr, sizeof(sr_ip_hdr_t));
+            sr_icmp_t3_hdr_t icmp_t3_hdr;
+            icmp_t3_hdr.icmp_type = type;
+            icmp_t3_hdr.icmp_code = code;
+            icmp_t3_hdr.unused = 0;
+            icmp_t3_hdr.icmp_sum = 0;
+            icmp_t3_hdr.next_mtu = 0;
             
             // Generate checksum
-            icmp_t3_hdr->icmp_sum = cksum(icmp_t3_hdr, packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
-            memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_t3_hdr, sizeof(sr_icmp_t3_hdr_t));
+            icmp_t3_hdr.icmp_sum = cksum(&icmp_t3_hdr, help.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
+            memcpy(help.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), &icmp_t3_hdr, sizeof(sr_icmp_t3_hdr_t));
 
+            print_hdr_ip(help.data());
+            print_hdr_icmp(help.data());
+
+            packetSender->sendPacket(help, iface);
             break;
         }
         default: {
@@ -430,12 +456,13 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
             // Generate checksum
             icmp_hdr->icmp_sum = cksum(icmp_hdr, packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
             memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_hdr, sizeof(sr_icmp_hdr_t));
+            packetSender->sendPacket(packet, iface);
             break;
         }
     }
 
-    packetSender->sendPacket(packet, iface);
 }
+
 
 void StaticRouter::forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterface interface, RoutingEntry next_hop) {
     std::cout << "Packet to be forwarded: " << std::endl;
