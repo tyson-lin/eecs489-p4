@@ -226,7 +226,7 @@ void StaticRouter::handleIP_PacketTTL(std::vector<uint8_t> packet, std::string i
             return; 
         case 1:    
             std::cout << "Sending time exceeded" << std::endl;
-            sendICMP_Packet(packet, iface, 11, 0);
+            send_time_exceeded(packet, iface);
             return;
         default: // TTL>1
             // is destination IP in routing table ?
@@ -319,7 +319,52 @@ void StaticRouter::send_destination_net_unreachable(Packet packet, std::string i
 }
 
 void StaticRouter::send_time_exceeded(Packet packet, std::string iface) {
-    return;
+    // Type 11 code 0
+    std::cout << "Sending time exceeded" << std::endl;
+    
+    Packet new_packet(sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t)+sizeof(sr_icmp_t3_hdr_t));
+    sr_ethernet_hdr_t* eth_hdr = (sr_ethernet_hdr_t*)(packet.data());
+    sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t));
+    sr_icmp_t3_hdr_t* icmp_hdr = (sr_icmp_t3_hdr_t*)(new_packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t));
+
+    RoutingInterface interface = routingTable->getRoutingInterface(iface);
+
+    // Generate ethernet header
+    for (int i = 0; i < ETHER_ADDR_LEN; i++) {
+        eth_hdr->ether_dhost[i] = eth_hdr->ether_shost[i];
+        eth_hdr->ether_shost[i] = interface.mac.data()[i];
+    }
+    eth_hdr->ether_type = htons(ethertype_ip);
+    memcpy(new_packet.data(),eth_hdr,sizeof(sr_ethernet_hdr_t));
+
+    // Generate the IMCP header
+    icmp_hdr->icmp_type = 11;
+    icmp_hdr->icmp_code = 0;
+    memcpy(icmp_hdr->data,ip_hdr,ICMP_DATA_SIZE);
+
+    icmp_hdr->icmp_sum = 0;
+    icmp_hdr->icmp_sum = cksum(icmp_hdr, sizeof(sr_icmp_t3_hdr_t));
+
+    memcpy(new_packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_hdr, sizeof(sr_icmp_t3_hdr_t));
+
+    // Generate IP header
+    ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t));
+
+    ip_hdr->ip_ttl = INIT_TTL;
+    uint32_t ip_src = ip_hdr->ip_src;
+    //uint32_t ip_dst = ip_hdr->ip_dst;
+    ip_hdr->ip_src = interface.ip;
+    ip_hdr->ip_dst = ip_src;
+
+    ip_hdr->ip_p = ip_protocol_icmp;
+    
+    ip_hdr->ip_sum = 0;
+    ip_hdr->ip_sum = cksum(ip_hdr,sizeof(sr_ip_hdr_t));
+
+    memcpy(new_packet.data()+sizeof(sr_ethernet_hdr_t), ip_hdr, sizeof(sr_ip_hdr_t));
+
+    // Send packet
+    packetSender->sendPacket(new_packet, iface);
 }
 
 void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code) {
@@ -358,8 +403,6 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
     std::memcpy(packet.data(), ehdr, sizeof(sr_ethernet_hdr_t));
 
     // packet type shouldn't change
-
-
 
     // Generate the ICMP header
     switch (type) {
