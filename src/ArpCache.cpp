@@ -84,41 +84,47 @@ void ArpCache::send_host_unreachable(Packet packet) {
     Packet new_packet(sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t)+sizeof(sr_icmp_t3_hdr_t));
     sr_ethernet_hdr_t* eth_hdr = (sr_ethernet_hdr_t*)(packet.data());
     sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t));
-    
+    sr_icmp_t3_hdr_t* icmp_hdr = (sr_icmp_t3_hdr_t*)(new_packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t));
+
     // Generate ethernet header
     for (int i = 0; i < ETHER_ADDR_LEN; i++) {
         std::swap(eth_hdr->ether_dhost[i],eth_hdr->ether_shost[i]);
     }
     eth_hdr->ether_type = htons(ethertype_ip);
-    memcpy(packet.data(),eth_hdr,sizeof(sr_ethernet_hdr_t));
+    memcpy(new_packet.data(),eth_hdr,sizeof(sr_ethernet_hdr_t));
+
+    // Generate the IMCP header
+    icmp_hdr->icmp_type = 3;
+    icmp_hdr->icmp_code = 1;
+    icmp_hdr->next_mtu = 1500;
+    memcpy(icmp_hdr->data,ip_hdr,ICMP_DATA_SIZE);
+
+    icmp_hdr->icmp_sum = 0;
+    icmp_hdr->icmp_sum = cksum(icmp_hdr, sizeof(sr_icmp_t3_hdr_t));
+
+    memcpy(new_packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_hdr, sizeof(sr_icmp_t3_hdr_t));
 
     // Generate IP header
+    ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t));
+
     ip_hdr->ip_ttl = INIT_TTL;
-    std::swap(ip_hdr->ip_src, ip_hdr->ip_dst);
+    uint32_t ip_src = ip_hdr->ip_src;
+    uint32_t ip_dst = ip_hdr->ip_dst;
+    ip_hdr->ip_src = ip_dst;
+    ip_hdr->ip_dst = ip_src;
+
     ip_hdr->ip_p = ip_protocol_icmp;
     
     ip_hdr->ip_sum = 0;
-    ip_hdr->ip_sum = cksum(packet.data()+sizeof(sr_ethernet_hdr_t),sizeof(sr_ip_hdr_t));
+    ip_hdr->ip_sum = cksum(ip_hdr,sizeof(sr_ip_hdr_t));
 
-    memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), ip_hdr, sizeof(sr_ip_hdr_t));
-
-    // Generate the IMCP header
-    sr_icmp_t3_hdr_t icmp_hdr;
-    icmp_hdr.icmp_type = 3;
-    icmp_hdr.icmp_code = 1;
-    icmp_hdr.next_mtu = 1500;
-    memcpy(icmp_hdr.data,ip_hdr,ICMP_DATA_SIZE);
-
-    icmp_hdr.icmp_sum = 0;
-    icmp_hdr.icmp_sum = cksum(&icmp_hdr, sizeof(sr_icmp_t3_hdr_t));
-
-    memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), &icmp_hdr, sizeof(sr_icmp_t3_hdr_t));
+    memcpy(new_packet.data()+sizeof(sr_ethernet_hdr_t), ip_hdr, sizeof(sr_ip_hdr_t));
 
     // Get sending interface
     std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(ip_hdr->ip_dst);
     std::string iface = entry->iface;
 
-    packetSender->sendPacket(packet, iface);
+    packetSender->sendPacket(new_packet, iface);
 }
 
 void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
@@ -149,8 +155,11 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
 
     for (AwaitingPacket & awaiting_packet : request.awaitingPackets) {
         Packet packet = awaiting_packet.packet;
+        std::string iface = awaiting_packet.iface;
+        RoutingInterface interface = routingTable->getRoutingInterface(iface);
         // fix the ethernet header
         sr_ethernet_hdr_t * eth_hdr = (sr_ethernet_hdr_t*)packet.data();
+        memcpy(eth_hdr->ether_shost, interface.mac.data(), ETHER_ADDR_LEN);
         memcpy(eth_hdr->ether_dhost, mac.data(), ETHER_ADDR_LEN);
         memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
 
