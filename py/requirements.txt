@@ -6,7 +6,7 @@ idna==3.10
 incremental==24.7.2
 loguru==0.7.2
 mininet==2.3.0.dev6
-protobuf==5.28.3
+protobuf==5.29.1
 setuptools==75.3.0
 Twisted==24.10.0
 typing_extensions==4.12.2

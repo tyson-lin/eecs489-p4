@@ -131,7 +131,9 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
     std::unique_lock lock(mutex);
 
     // TODO: Your code below
-
+    if (requests.find(ip) == requests.end()) {
+        return;
+    }
     std::cout << "Adding ArpCache entry for IP";
     print_addr_ip_int(ip); 
 
