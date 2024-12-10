@@ -252,7 +252,7 @@ void ArpCache::sendARP_Request(uint32_t ip, const std::string &iface) {
     memcpy(&arp_hdr.ar_sha, interface.mac.data(), ETHER_ADDR_LEN);
     memcpy(&arp_hdr.ar_sip, &(interface.ip), sizeof(uint32_t));
     memset(&arp_hdr.ar_tha, 0x00, ETHER_ADDR_LEN);
-    memcpy(&arp_hdr.ar_tip, &(entry->gateway), sizeof(uint32_t));
+    memcpy(&arp_hdr.ar_tip, &ip, sizeof(uint32_t));
 
     memcpy(arp_request.data()+sizeof(sr_ethernet_hdr_t), &arp_hdr, sizeof(sr_arp_hdr_t));  
 

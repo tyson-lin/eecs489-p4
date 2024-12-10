@@ -38,8 +38,7 @@ private:
     void handleIP_PacketToMyInterfaces(std::vector<uint8_t> packet, std::string iface);
     void handleIP_PacketTTL(std::vector<uint8_t> packet, std::string iface);
 
-    void send_destination_net_unreachable(Packet packet, std::string iface);
-    void send_time_exceeded(Packet packet, std::string iface);
+    void sendEcho(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code);
 
     void sendICMP_Packet(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code);
 
