@@ -260,9 +260,27 @@ static void printBytes(const void* ptr) {
 }
 
 void StaticRouter::sendEcho(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code) {
-    sr_ethernet_hdr_t ehdr;
-    sr_ip_hdr_t iphdr;
-    sr_icmp_hdr_t icmp_hdr;
+     sr_ethernet_hdr_t ehdr;
+    memcpy(&ehdr,packet.data(),sizeof(sr_ethernet_hdr_t));
+    sr_ip_hdr_t iphdr; 
+    memcpy(&iphdr,packet.data()+sizeof(sr_ethernet_hdr_t), sizeof(sr_ip_hdr_t));
+    std::optional<RoutingEntry> next_hop = routingTable->getRoutingEntry(iphdr.ip_src);
+    // if not there, just drop it
+    if (!next_hop) {
+        std::optional<mac_addr> entry = arpCache->getEntry(iphdr.ip_src);
+    }
+
+    // Generate the IP header
+    // theoretically all we need to do is swap source and destination
+    uint32_t temp_ip;
+    std::memcpy(&temp_ip, &iphdr.ip_src, sizeof(temp_ip)); // Copy sender IP into temp
+    std::memcpy(&iphdr.ip_src, &iphdr.ip_dst, sizeof(temp_ip)); // Replace sender IP with target IP
+    std::memcpy(&iphdr.ip_dst, &temp_ip, sizeof(temp_ip)); // Replace target IP with original sender IP
+
+    iphdr.ip_sum = 0;
+    iphdr.ip_sum = cksum(&iphdr, sizeof(sr_ip_hdr_t));
+
+    std::memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), &iphdr, sizeof(sr_ip_hdr_t));
 
     // First generate the ethernet header
     RoutingInterface arrival_interface = routingTable->getRoutingInterface(iface);
@@ -282,29 +300,16 @@ void StaticRouter::sendEcho(std::vector<uint8_t> packet, std::string iface, uint
         // set the dest to be the mac addr of the dest interface
         ehdr.ether_dhost[i] = dest_mac_addr[i];
     }
-    ehdr.ether_type = htons(ethertype_ip);
     std::memcpy(packet.data(), &ehdr, sizeof(sr_ethernet_hdr_t));
 
+    sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+    icmp_hdr->icmp_type = type;
+    icmp_hdr->icmp_code = code;
+    icmp_hdr->icmp_sum = 0;
 
-    uint32_t temp_ip;
-    std::memcpy(&temp_ip, &iphdr.ip_src, sizeof(temp_ip)); // Copy sender IP into temp
-    std::memcpy(&iphdr.ip_src, &iphdr.ip_dst, sizeof(temp_ip)); // Replace sender IP with target IP
-    std::memcpy(&iphdr.ip_dst, &temp_ip, sizeof(temp_ip)); // Replace target IP with original sender IP
-    iphdr.ip_id = htons(0);
-    iphdr.ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t) + (packet.size() - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t) - sizeof(sr_icmp_hdr_t)));
-    iphdr.ip_p = ip_protocol_icmp;
-    iphdr.ip_off = htons(0);
-    iphdr.ip_tos = 0;
-    iphdr.ip_ttl = 64;
-    iphdr.ip_sum = 0;
-    iphdr.ip_sum = cksum(&iphdr, sizeof(sr_ip_hdr_t));
-    std::memcpy(packet.data()+sizeof(sr_ethernet_hdr_t), &iphdr, sizeof(sr_ip_hdr_t));
-
-    icmp_hdr.icmp_type = type;
-    icmp_hdr.icmp_code = code;
-    icmp_hdr.icmp_sum = 0;
-    icmp_hdr.icmp_sum = cksum(&icmp_hdr, packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
-    memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), &icmp_hdr, sizeof(sr_icmp_hdr_t));
+    // Generate checksum
+    icmp_hdr->icmp_sum = cksum(icmp_hdr, packet.size()-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
+    memcpy(packet.data()+sizeof(sr_ethernet_hdr_t)+sizeof(sr_ip_hdr_t), icmp_hdr, sizeof(sr_icmp_hdr_t));
     packetSender->sendPacket(packet, iface);
 }
 
