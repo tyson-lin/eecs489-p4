@@ -234,7 +234,7 @@ void StaticRouter::handleIP_PacketTTL(std::vector<uint8_t> packet, std::string i
             return; 
         case 1:    
             std::cout << "Sending time exceeded" << std::endl;
-            sendICMP_Packet(packet, iface, 11, 0);
+            send_time_exceeded(packet, iface);
             return;
         default: // TTL>1
             std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(iphdr->ip_dst);
