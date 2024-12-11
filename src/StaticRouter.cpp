@@ -182,8 +182,9 @@ void StaticRouter::handleARP_Response(std::vector<uint8_t> packet, std::string i
     print_hdrs(packet.data(), packet.size());
 
     // IP address associated with this interface]
-    sr_arp_hdr_t* arp_hdr = (sr_arp_hdr_t*)(packet.data()+sizeof(sr_ethernet_hdr_t));
-    ip_addr sender_ip_addr = arp_hdr->ar_sip;
+    sr_arp_hdr_t arp_hdr;
+    memcpy(&arp_hdr, packet.data() + sizeof(sr_ethernet_hdr_t), sizeof(sr_arp_hdr_t));
+    ip_addr sender_ip_addr = arp_hdr.ar_sip;
 
     // Have I issued this response?
     std::optional<mac_addr> entry_mac_addr = arpCache->getEntry(sender_ip_addr);
@@ -193,7 +194,7 @@ void StaticRouter::handleARP_Response(std::vector<uint8_t> packet, std::string i
 
     // Cache ARP
     mac_addr sender_mac_addr;
-    memcpy(sender_mac_addr.data(), arp_hdr->ar_sha, ETHER_ADDR_LEN);
+    memcpy(sender_mac_addr.data(), arp_hdr.ar_sha, ETHER_ADDR_LEN);
 
     arpCache->addEntry(sender_ip_addr, sender_mac_addr);
 }
