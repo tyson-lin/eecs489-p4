@@ -31,20 +31,6 @@ void ArpCache::loop() {
 
 void ArpCache::tick() {
     std::unique_lock lock(mutex);
-    // TODO: Your code here
-
-    // In the case of a cache miss, an ARP request should be sent to a target IP 
-    // address about once every second until a reply comes in. If the ARP request 
-    // is sent seven times with no reply, an ICMP destination host unreachable is 
-    // sent back to the source IP as stated above. The provided ARP request queue 
-    // will help you manage the request queue.
-
-    // Within the tick() function, do we resend ARP request once for each awaitingPacket, 
-    // or once per IP addr? Currently I am doing the first approach and there seems to 
-    // be issues arising from that function.
-
-    // once per ip addr per second ED #844
-
     for (auto it = requests.begin(); it != requests.end();) {
         ArpRequest* request = &(it->second);
 
@@ -246,7 +232,7 @@ void ArpCache::sendARP_Request(uint32_t ip, const std::string &iface) {
     sr_arp_hdr_t arp_hdr;
     arp_hdr.ar_hrd = htons(arp_hrd_ethernet);
     arp_hdr.ar_pro = htons(2048);
-    arp_hdr.ar_hln = 6;
+    arp_hdr.ar_hln = ETHER_ADDR_LEN;
     arp_hdr.ar_pln = 4;
     arp_hdr.ar_op = htons(arp_op_request);
     memcpy(&arp_hdr.ar_sha, interface.mac.data(), ETHER_ADDR_LEN);

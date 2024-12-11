@@ -40,7 +40,7 @@ private:
 
     void sendEcho(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code);
 
-    void sendICMP_Packet(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code);
+    void sendICMP_Packet(std::vector<uint8_t> packet, std::string iface, uint8_t type, uint8_t code, mac_addr arrival_mac_addr, uint32_t sIP, mac_addr dest_mac_addr,  uint32_t dIP);
 
     void forwardIP_Packet(std::vector<uint8_t> packet, RoutingInterface interface, RoutingEntry next_hop);  
 };
