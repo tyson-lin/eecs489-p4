@@ -146,10 +146,11 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
         std::string iface = awaiting_packet.iface;
         RoutingInterface interface = routingTable->getRoutingInterface(iface);
         // fix the ethernet header
-        sr_ethernet_hdr_t * eth_hdr = (sr_ethernet_hdr_t*)packet.data();
-        memcpy(eth_hdr->ether_shost, interface.mac.data(), ETHER_ADDR_LEN);
-        memcpy(eth_hdr->ether_dhost, mac.data(), ETHER_ADDR_LEN);
-        memcpy(packet.data(), eth_hdr, sizeof(sr_ethernet_hdr_t));
+        sr_ethernet_hdr_t eth_hdr;
+        std::memcpy(&eth_hdr, packet.data(),  sizeof(sr_ethernet_hdr_t));
+        memcpy(eth_hdr.ether_shost, interface.mac.data(), ETHER_ADDR_LEN);
+        memcpy(eth_hdr.ether_dhost, mac.data(), ETHER_ADDR_LEN);
+        memcpy(packet.data(), &eth_hdr, sizeof(sr_ethernet_hdr_t));
 
         std::optional<RoutingEntry> entry = routingTable->getRoutingEntry(ip);
         packetSender->sendPacket(packet, entry->iface);
