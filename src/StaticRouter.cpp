@@ -216,7 +216,7 @@ void StaticRouter::handleIP_PacketToMyInterfaces(std::vector<uint8_t> packet, st
             memcpy(d_mac.data(), eth_hdr->ether_shost, ETHER_ADDR_LEN);
             s_ip = iphdr->ip_dst;
             d_ip = iphdr->ip_src;
-            auto temp = routingTable->getRoutingEntry(s_ip);
+            auto temp = routingTable->getRoutingEntry(iphdr->ip_src);
             auto inter = routingTable->getRoutingInterface(temp->iface);
             sendICMP_Packet(packet, iface, 3, 3, inter.mac, s_ip, d_mac, d_ip);
             return;
@@ -347,7 +347,6 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
 
     memcpy(&ehdr,packet.data(),sizeof(sr_ethernet_hdr_t));
     std::memcpy(&iphdr, packet.data() + sizeof(sr_ethernet_hdr_t), sizeof(sr_ip_hdr_t));
-    std::memcpy(icmphdr.data, packet.data() + sizeof(sr_ethernet_hdr_t), 28);
     
     //ETH HEADER
     for (int i = 0; i < ETHER_ADDR_LEN; i++) { 
@@ -374,12 +373,14 @@ void StaticRouter::sendICMP_Packet(std::vector<uint8_t> packet, std::string ifac
     icmphdr.icmp_sum = 0;
     icmphdr.unused = 0;
     icmphdr.next_mtu = 0;
+    std::memcpy(icmphdr.data, packet.data() + sizeof(sr_ethernet_hdr_t), ICMP_DATA_SIZE);
     icmphdr.icmp_sum = cksum(&icmphdr, sizeof(sr_icmp_t3_hdr_t));
 
     std::vector<uint8_t> help(sizeof(sr_ethernet_hdr_t) +sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t));
     std::memcpy(help.data(), &ehdr, sizeof(sr_ethernet_hdr_t));
     std::memcpy(help.data() + sizeof(sr_ethernet_hdr_t), &iphdr, sizeof(sr_ip_hdr_t));
     std::memcpy(help.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t), &icmphdr, sizeof(sr_icmp_t3_hdr_t));
+
     packetSender->sendPacket(help, iface);
 }
 
